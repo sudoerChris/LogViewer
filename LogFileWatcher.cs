@@ -57,6 +57,9 @@ namespace LogViewer {
 				return;
 			}
 			Stop();
+			if (!Directory.Exists(folder)) {
+				return;
+			}
 			logFolderWatcher.Path = logFileWatcher.Path = folder;
 			this.pattern = pattern;
 			patternIsRegex = regex;
