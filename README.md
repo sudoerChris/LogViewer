@@ -8,6 +8,7 @@ Main Features:
 - Line filtering
 - Always on top
 - Find (F3/Shift+F3)
+- Startup with config file
 
 Planned Feature:
 - Read program debug output
