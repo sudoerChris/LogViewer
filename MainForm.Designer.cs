@@ -60,7 +60,9 @@ namespace LogViewer
 			this.colorDialog1 = new System.Windows.Forms.ColorDialog();
 			this.scrollToBottomBtn = new System.Windows.Forms.Label();
 			this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
+#if DEBUG
 			this.testBtn = new System.Windows.Forms.Button();
+#endif
 			this.clearBtn = new System.Windows.Forms.Label();
 			this.findPanel = new System.Windows.Forms.Panel();
 			this.findTextbox = new System.Windows.Forms.TextBox();
@@ -411,6 +413,7 @@ namespace LogViewer
 			this.scrollToBottomBtn.Text = "v";
 			this.scrollToBottomBtn.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
 			this.scrollToBottomBtn.Click += new System.EventHandler(this.scrollToBottomBtn_Click);
+#if DEBUG
 			// 
 			// testBtn
 			// 
@@ -421,6 +424,7 @@ namespace LogViewer
 			this.testBtn.Text = "Test";
 			this.testBtn.UseVisualStyleBackColor = true;
 			this.testBtn.Click += new System.EventHandler(this.testBtn_Click);
+#endif
 			// 
 			// clearBtn
 			// 
@@ -523,7 +527,9 @@ namespace LogViewer
 			this.ClientSize = new System.Drawing.Size(822, 440);
 			this.Controls.Add(this.findPanel);
 			this.Controls.Add(this.clearBtn);
+#if DEBUG
 			this.Controls.Add(this.testBtn);
+#endif
 			this.Controls.Add(this.scrollToBottomBtn);
 			this.Controls.Add(this.toggleOptionBtn);
 			this.Controls.Add(this.optionPanel);
@@ -544,7 +550,7 @@ namespace LogViewer
 
 		}
 
-		#endregion
+#endregion
 
 		private RichTextBoxEx mainLogText;
 		private Button toggleOptionBtn;
