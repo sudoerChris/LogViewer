@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace LogViewer {
 	public partial class MainForm : Form {
