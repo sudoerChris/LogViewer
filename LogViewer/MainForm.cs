@@ -51,7 +51,7 @@ namespace LogViewer {
 			highlightDataGrid.LostFocus += highlightDataGrid_LostFocus;
 			highlightDataGrid.KeyUp += HighlightDataGrid_KeyUp;
 			int[] win32DefColors = new int[defaultHighlightBackColors.Length];
-			for (int i = 0; i<defaultHighlightBackColors.Length;i++) {
+			for (int i = 0; i < defaultHighlightBackColors.Length; i++) {
 				win32DefColors[i] = ColorTranslator.ToWin32(defaultHighlightBackColors[i]);
 			}
 			colorDialog1.CustomColors = win32DefColors;
@@ -70,7 +70,10 @@ namespace LogViewer {
 			wordWrapCb.CheckedChanged += (s, e) => { mainLogText.WordWrap = wordWrapCb.Checked; };
 			saveBtn.Click += (s, e) => { SaveConfig(); };
 			bufferedDrawCb.CheckedChanged += (s, e) => { mainLogText.BuffereDrawing = bufferedDrawCb.Checked; };
-			}
+#if DEBUG
+			testBtn.Visible = true;
+#endif
+		}
 		public void SaveConfig() {
 			configManager.config.FolderPath = folderTextBox.Text;
 			configManager.config.Filename = filenameTextbox.Text;
@@ -132,7 +135,7 @@ namespace LogViewer {
 		public void SetGeometry(int x, int y, int w, int h) {
 			Bounds = new Rectangle(x, y, w, h);
 		}
-		#endregion
+#endregion
 
 		#region print log file
 		private void Watcher_TargetChanged(object sender, FileSystemEventArgs e) {
@@ -475,21 +478,7 @@ namespace LogViewer {
 		}
 		#endregion UI Event
 
-#if DEBUG
 		private void testBtn_Click(object sender, EventArgs e){
-			Rectangle formRect = Bounds;
-			formRect.Offset(15, 15);
-			formRect.Width -= 30;
-			formRect.Height -= 30;
-			bool isLocationWithinScreen = false;
-			foreach (Screen screen in Screen.AllScreens) {
-				if (screen.Bounds.IntersectsWith(formRect)) {
-					isLocationWithinScreen = true;
-					break;
-				}
-			}
-			if (!isLocationWithinScreen) Location = new Point(0, 0);
 		}
-#endif
 	}
 }
