@@ -181,7 +181,7 @@ namespace LogViewer
 			// 
 			this.persistentCb.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.persistentCb.AutoSize = true;
-			this.persistentCb.Location = new System.Drawing.Point(717, 86);
+			this.persistentCb.Location = new System.Drawing.Point(665, 86);
 			this.persistentCb.Name = "persistentCb";
 			this.persistentCb.Size = new System.Drawing.Size(72, 17);
 			this.persistentCb.TabIndex = 8;
@@ -200,7 +200,7 @@ namespace LogViewer
             0,
             0});
 			this.readLastLinesInput.Name = "readLastLinesInput";
-			this.readLastLinesInput.Size = new System.Drawing.Size(279, 16);
+			this.readLastLinesInput.Size = new System.Drawing.Size(227, 16);
 			this.readLastLinesInput.TabIndex = 7;
 			this.readLastLinesInput.Value = new decimal(new int[] {
             500,
@@ -280,9 +280,10 @@ namespace LogViewer
 			this.fontBtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 			this.fontBtn.Font = this.mainLogText.Font;
 			this.fontBtn.ForeColor = System.Drawing.Color.White;
-			this.fontBtn.Location = new System.Drawing.Point(792, 83);
+			this.fontBtn.Location = new System.Drawing.Point(743, 83);
+			this.fontBtn.Margin = new System.Windows.Forms.Padding(0);
 			this.fontBtn.Name = "fontBtn";
-			this.fontBtn.Size = new System.Drawing.Size(141, 23);
+			this.fontBtn.Size = new System.Drawing.Size(190, 23);
 			this.fontBtn.TabIndex = 9;
 			this.fontBtn.Text = "Font";
 			this.fontBtn.UseVisualStyleBackColor = false;

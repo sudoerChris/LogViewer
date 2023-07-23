@@ -365,8 +365,9 @@ namespace LogViewer {
 
 		#region font
 		private void SetFont(Font font) {
-			fontBtn.Text = $"{font.Name}, {font.SizeInPoints}pt";
-			fontBtn.Font = mainLogText.Font = font;
+			fontBtn.Text = $"{font.Name}, {font.SizeInPoints:0.##} pt";
+			fontBtn.Font = new Font(font.FontFamily,fontBtn.Font.Size);
+			mainLogText.Font = font;
 		}
 		private void fontBtn_Click(object sender, EventArgs e) {
 			fontDialog1.Font = mainLogText.Font;
