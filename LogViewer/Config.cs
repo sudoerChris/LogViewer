@@ -54,6 +54,10 @@ namespace LogViewer {
 		public string FontFamilyName { get; set; }
 		public float FontSize { get; set; }
 		public int FontStyle { get; set; }
+		public int X { get; set; } = -1;
+		public int Y { get; set; } = -1;
+		public int W { get; set; } = -1;
+		public int H { get; set; } = -1;
 		public List<HighlightItem> HighlightItems { get; set; }
 	}
 	internal class ConfigManager {

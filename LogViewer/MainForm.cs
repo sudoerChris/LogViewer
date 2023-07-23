@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using LogViewer;
 
 namespace LogViewer {
 	public partial class MainForm : Form {
@@ -84,23 +85,27 @@ namespace LogViewer {
 			configManager.config.FontSize = mainLogText.Font.Size;
 			configManager.config.FontStyle = (int)mainLogText.Font.Style;
 			configManager.config.HighlightItems = new List<HighlightItem>(mainLogText.highlightItems);
-			if(configManager.path!=null) {
+			configManager.config.X = Location.X;
+			configManager.config.Y = Location.Y;
+			configManager.config.W = Size.Width;
+			configManager.config.H = Size.Height;
+			if (configManager.path != null) {
 				saveFileDialog1.InitialDirectory = Path.GetDirectoryName(configManager.path);
 				saveFileDialog1.FileName = Path.GetFileNameWithoutExtension(configManager.path);
 			}
-			else { 
+			else {
 				saveFileDialog1.InitialDirectory = Directory.GetCurrentDirectory();
 				saveFileDialog1.FileName = invalidPathChar.Replace(filenameTextbox.Text, "");
 			}
 			DialogResult result = saveFileDialog1.ShowDialog();
-			if(result == DialogResult.OK) {
+			if (result == DialogResult.OK) {
 				configManager.path = saveFileDialog1.FileName;
 				configManager.SaveConfig();
 			}
 		}
 		public bool LoadConfig(string path) {
 			configManager.path = path;
-			if(!configManager.LoadConfig()) {
+			if (!configManager.LoadConfig()) {
 				mainLogText.WriteLine("Read Config File Error!", Color.Red);
 				return false;
 			}
@@ -115,11 +120,17 @@ namespace LogViewer {
 			alwaysOnTopCb.Checked = configManager.config.AlwaysOnTop;
 			SetFont(new Font(configManager.config.FontFamilyName, configManager.config.FontSize, (FontStyle)configManager.config.FontStyle));
 			mainLogText.highlightItems = new List<HighlightItem>(configManager.config.HighlightItems);
+			if (configManager.config.W > -1 && configManager.config.H > -1) {
+				Bounds = new Rectangle(configManager.config.X, configManager.config.Y, configManager.config.W, configManager.config.H);
+			}
 			highlightDataGrid.Rows.Clear();
-			foreach(HighlightItem item in mainLogText.highlightItems) {
-				highlightDataGrid.Rows.Add(GetNewRow(item.PatternRegex.ToString(),item.HighlightColor));
+			foreach (HighlightItem item in mainLogText.highlightItems) {
+				highlightDataGrid.Rows.Add(GetNewRow(item.PatternRegex.ToString(), item.HighlightColor));
 			}
 			return true;
+		}
+		public void SetGeometry(int x, int y, int w, int h) {
+			Bounds = new Rectangle(x, y, w, h);
 		}
 		#endregion
 
@@ -466,6 +477,18 @@ namespace LogViewer {
 
 #if DEBUG
 		private void testBtn_Click(object sender, EventArgs e){
+			Rectangle formRect = Bounds;
+			formRect.Offset(15, 15);
+			formRect.Width -= 30;
+			formRect.Height -= 30;
+			bool isLocationWithinScreen = false;
+			foreach (Screen screen in Screen.AllScreens) {
+				if (screen.Bounds.IntersectsWith(formRect)) {
+					isLocationWithinScreen = true;
+					break;
+				}
+			}
+			if (!isLocationWithinScreen) Location = new Point(0, 0);
 		}
 #endif
 	}
