@@ -1,22 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace LogViewer {
 	internal class RichTextBoxEx : RichTextBox {
+		#region win32 call
 		[DllImport("user32.dll")]
 		private static extern IntPtr SendMessage(IntPtr hWnd, Int32 wMsg, Int32 wParam, ref Point lParam);
 
 		[DllImport("user32.dll")]
 		private static extern IntPtr SendMessage(IntPtr hWnd, Int32 wMsg, Int32 wParam, IntPtr lParam);
-
 		private const int WM_USER = 0x400;
 		private const int WM_SETREDRAW = 0x000B;
 		private const int EM_GETEVENTMASK = WM_USER + 59;
 		private const int EM_SETEVENTMASK = WM_USER + 69;
-		
+		#endregion win32 call
+
 		private SCROLLINFO suspendScrollInfoH, suspendScrollInfoV;
 		private bool writing = false;
 		private bool suspended = false;
@@ -24,7 +26,9 @@ namespace LogViewer {
 		private int suspendSelStart = 0;
 		private int suspendSelLength = 0;
 		private bool KeepScrollPosAfterWrite = false;
-		public void BeginWrite(bool bufferedDrawing = false) {
+		public List<HighlightItem> highlightItems = new List<HighlightItem>();
+		public bool BuffereDrawing = false;
+		public void BeginWrite() {
 			if (writing) return;
 			writing = true;
 			KeepScrollPosAfterWrite = SelectionStart != TextLength;
@@ -35,7 +39,7 @@ namespace LogViewer {
 			if (KeepScrollPosAfterWrite) {
 				suspendScrollInfoV = GetWin32ScrollInfo(SBOrientation.SB_VERT);
 			}
-			if (bufferedDrawing || KeepScrollPosAfterWrite) {
+			if (BuffereDrawing || KeepScrollPosAfterWrite) {
 				SuspendPainting();
 			}
 		}
@@ -55,8 +59,6 @@ namespace LogViewer {
 			ResumePainting();
 			writing = false;
 		}
-
-
 		private void SuspendPainting() {
 			if (suspended) return;
 			suspended = true;
@@ -68,17 +70,19 @@ namespace LogViewer {
 			Invalidate();
 			suspended = false;
 		}
-
 		public void RemoveFirst(int count) {
+			// store and shift selection index
 			int selStart = (suspended ? suspendSelStart : SelectionStart) - count;
 			int curSelLength = SelectionLength;
 			if (selStart < 0) {
 				selStart = 0;
 				curSelLength = 0;
 			}
-			int topLeftCharIndex = GetCharIndexFromPosition(new Point(0, 0));
+			int topLeftCharIndex = GetCharIndexFromPosition(new Point(0, 0)) - count;
+			topLeftCharIndex = Math.Max(0, topLeftCharIndex);
 			Select(0, count);
 			SelectedText = "";
+			// apply new selection index
 			if (suspended) {
 				suspendSelStart = selStart;
 				suspendSelLength = curSelLength;
@@ -87,10 +91,54 @@ namespace LogViewer {
 				Select(selStart, curSelLength);
 			}
 		}
+		public void WriteLines(ref List<string> lines, bool newFirstLine = true) {
+			if (lines.Count == 0) return;
+			BeginWrite();
+			if (TextLength > 0 && !newFirstLine) {
+				Select(TextLength - 1, 1);
+				SelectedText = "";
+			}
+			for (int i = 0; i < lines.Count; i++) {
+				if (TextLength + lines[i].Length > 10_000_000) {
+					RemoveFirst(lines[i].Length * (lines.Count - i));
+				}
+				int lineStartIndex = TextLength;
+				AppendText(lines[i]);
+				foreach (HighlightItem item in highlightItems) {
+					if (item.PatternRegex == null) continue;
+					foreach (Match m in item.PatternRegex.Matches(lines[i])) {
+						if (!m.Success) continue;
+						Select(lineStartIndex + m.Index, m.Length);
+						SelectionBackColor = item.HighlightColor;
+					}
+				}
+			}
+			EndWrite();
+		}
+		public void WriteLine(string msg, Color? c = null) {
+			BeginWrite();
+			Select(Text.Length, 0);
+			SelectionBackColor = c == null ? System.Drawing.Color.DarkGreen : (Color)c;
+			AppendText("LogViewer: " + msg + '\n');
+			SelectionBackColor = BackColor;
+			EndWrite();
+		}
+
+
 		protected override void OnGotFocus(EventArgs e) {
 			// prevent rescroll to cursor when set focus
 			SetScrollPos(GetWin32ScrollInfo(SBOrientation.SB_HORZ).nPos,GetWin32ScrollInfo(SBOrientation.SB_VERT).nPos);
 		}
+
+		public void FindNext(string str) {
+			if (SelectionStart + SelectionLength >= TextLength) return;
+			Find(str, SelectionStart + SelectionLength, RichTextBoxFinds.None);
+		}
+		public void FindPrevious(string str) {
+			Find(str, 0, SelectionStart, RichTextBoxFinds.Reverse);
+		}
+
+
 		#region scroll
 		[DllImport("user32.dll")]
 		private extern static int GetWindowLong(IntPtr hWnd, int index);

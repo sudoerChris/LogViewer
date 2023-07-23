@@ -21,18 +21,16 @@ namespace LogViewer {
 			this.SynchronizingObject = synchronizingObject;
 			InitWatcher();
 		}
-
 		public void Start() {
 			StartFolderWatcher();
 			StartFileWatcher();
 		}
-		public void StartFolderWatcher() {
+		private void StartFolderWatcher() {
 			if (!logFolderWatcher.EnableRaisingEvents) {
 				logFolderWatcher.EnableRaisingEvents = true;
 			}
 		}
-
-		public void StartFileWatcher() {
+		private void StartFileWatcher() {
 
 			if (!logFileWatcher.EnableRaisingEvents) {
 				logFileWatcher.EnableRaisingEvents = true;
@@ -45,10 +43,10 @@ namespace LogViewer {
 			StopFolderWatcher();
 			StopFileWatcher();
 		}
-		public void StopFolderWatcher() {
+		private void StopFolderWatcher() {
 			logFolderWatcher.EnableRaisingEvents = false;
 		}
-		public void StopFileWatcher() {
+		private void StopFileWatcher() {
 			logFileWatcher.EnableRaisingEvents = false;
 			fileWatcherTimer.Enabled = false;
 		}
@@ -86,7 +84,7 @@ namespace LogViewer {
 			StartFolderWatcher();
 			SelectLastWriteFile();
 		}
-		public string GetCurFilePath() { return curFilePath; }
+		public string GetCurFolderPath() { return curFilePath; }
 
 		public string GetCurFileName() { return logFileWatcher.Filter; }
 
@@ -107,11 +105,9 @@ namespace LogViewer {
 				onTargetChangedHandler = (FileSystemEventHandler)Delegate.Remove(onTargetChangedHandler, value);
 			}
 		}
-
 		private bool CheckFilename(string filename) {
 			return patternRegex.IsMatch(filename);
 		}
-
 		private FileInfo GetLastWriteFile() {
 			try {
 				DirectoryInfo directoryInfo = new DirectoryInfo(logFolderWatcher.Path);
@@ -141,13 +137,11 @@ namespace LogViewer {
 			}
 			return null;
 		}
-
 		private void SelectLastWriteFile() {
 			string fullName = GetLastWriteFile()?.FullName;
 			if (fullName == null) return;
 			SetTarget(fullName);
 		}
-
 		private void SetTarget(string fullName) {
 			if (curFilePath == fullName) return;
 			StopFileWatcher();
@@ -184,7 +178,7 @@ namespace LogViewer {
 			logFileWatcher.EndInit();
 			fileWatcherTimer.EndInit();
 		}
-
+		#region filesystem event
 		private void logFolderWatcher_Created(object sender, FileSystemEventArgs e) {
 			if (e.FullPath == curFilePath || !CheckFilename(e.Name)) return;
 			SetTarget(e.FullPath);
@@ -220,5 +214,6 @@ namespace LogViewer {
 		private void logFileWatcher_Deleted(object sender, FileSystemEventArgs e) {
 			StopFileWatcher();
 		}
+		#endregion filesystem event
 	}
 }
