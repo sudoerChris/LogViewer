@@ -203,8 +203,9 @@ namespace LogViewer {
 		}
 		public void ScrollToBottom() {
 			if (suspended) return;
-			SCROLLINFO info = GetWin32ScrollInfo(SBOrientation.SB_VERT);
-			SetScrollPos(GetWin32ScrollInfo(SBOrientation.SB_HORZ).nPos, (int)(info.nMax - info.nPage));
+			SCROLLINFO hScrollInfo = GetWin32ScrollInfo(SBOrientation.SB_HORZ);
+			SelectionStart = TextLength;
+			SetScrollPos(hScrollInfo.nPos, GetWin32ScrollInfo(SBOrientation.SB_VERT).nPos);
 		}
 
 		private void SetScrollPos(int x, int y) {

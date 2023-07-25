@@ -141,6 +141,7 @@ namespace LogViewer
 			this.mainLogText.BackColor = System.Drawing.Color.Black;
 			this.mainLogText.BorderStyle = System.Windows.Forms.BorderStyle.None;
 			this.mainLogText.CausesValidation = false;
+			this.mainLogText.DetectUrls = false;
 			this.mainLogText.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.mainLogText.Font = new System.Drawing.Font("Consolas", 9F);
 			this.mainLogText.ForeColor = System.Drawing.Color.White;

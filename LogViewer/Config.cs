@@ -51,6 +51,7 @@ namespace LogViewer {
 		public bool Persistent { get; set; }
 		public bool BufferedDraw { get; set; }
 		public bool AlwaysOnTop { get; set; }
+		public bool WordWrap { get; set; }
 		public string FontFamilyName { get; set; }
 		public float FontSize { get; set; }
 		public int FontStyle { get; set; }

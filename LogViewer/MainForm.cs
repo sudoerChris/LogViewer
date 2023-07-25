@@ -65,7 +65,7 @@ namespace LogViewer {
 			mainLogText.KeyUp += mainLogText_KeyUp;
 			findTextbox.KeyUp += findTextbox_KeyUp;
 			alwaysOnTopCb.CheckedChanged += (s, e) => { TopMost = alwaysOnTopCb.Checked; };
-			scrollToBottomBtn.Click += (s, e) => { mainLogText.SelectionStart = mainLogText.TextLength; };
+			scrollToBottomBtn.Click += (s, e) => { mainLogText.ScrollToBottom(); };
 			clearBtn.Click += (s, e) => { mainLogText.Text = null; };
 			wordWrapCb.CheckedChanged += (s, e) => { mainLogText.WordWrap = wordWrapCb.Checked; };
 			saveBtn.Click += (s, e) => { SaveConfig(); };
@@ -83,6 +83,7 @@ namespace LogViewer {
 			configManager.config.ReadLastLines = (int)readLastLinesInput.Value;
 			configManager.config.Persistent = persistentCb.Checked;
 			configManager.config.BufferedDraw = bufferedDrawCb.Checked;
+			configManager.config.WordWrap = wordWrapCb.Checked;
 			configManager.config.AlwaysOnTop = alwaysOnTopCb.Checked;
 			configManager.config.FontFamilyName = mainLogText.Font.FontFamily.Name;
 			configManager.config.FontSize = mainLogText.Font.Size;
@@ -119,6 +120,7 @@ namespace LogViewer {
 			excludeTextBox.Text = configManager.config.Exclude;
 			readLastLinesInput.Value = configManager.config.ReadLastLines;
 			persistentCb.Checked = configManager.config.Persistent;
+			wordWrapCb.Checked = configManager.config.WordWrap;
 			bufferedDrawCb.Checked = configManager.config.BufferedDraw;
 			alwaysOnTopCb.Checked = configManager.config.AlwaysOnTop;
 			SetFont(new Font(configManager.config.FontFamilyName, configManager.config.FontSize, (FontStyle)configManager.config.FontStyle));
@@ -359,6 +361,7 @@ namespace LogViewer {
 		}
 
 		private void folderTextBox_TextChanged(object sender, EventArgs e) {
+			if (folderTextBox.Text.StartsWith(@"\")) return; // skip checking for share folder while typing
 			checkFolder();
 		}
 		#endregion path
