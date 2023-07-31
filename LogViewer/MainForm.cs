@@ -6,16 +6,14 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
-using LogViewer;
 
 namespace LogViewer {
 	public partial class MainForm : Form {
-		private ConfigManager configManager = new ConfigManager();
+		private readonly ConfigManager configManager = new ConfigManager();
 		private LogFileWatcher watcher;
 		private Regex includeRegex, excludeRegex;
-		private Regex invalidPathChar = new Regex("<|>|:|\"|/|\\\\|\\||\\?|\\*", RegexOptions.Compiled | RegexOptions.Singleline);
-		private Regex invalidNonWildcardPathChar = new Regex("<|>|:|\"|/|\\\\|\\|", RegexOptions.Compiled | RegexOptions.Singleline);
+		private readonly Regex invalidPathChar = new Regex("<|>|:|\"|/|\\\\|\\||\\?|\\*", RegexOptions.Compiled | RegexOptions.Singleline);
+		private readonly Regex invalidNonWildcardPathChar = new Regex("<|>|:|\"|/|\\\\|\\|", RegexOptions.Compiled | RegexOptions.Singleline);
 
 		public MainForm() {
 			Utility.SetDarkMode(Handle, true);
@@ -143,8 +141,8 @@ namespace LogViewer {
 		private void Watcher_TargetChanged(object sender, FileSystemEventArgs e) {
 			lastFileSize = 0;
 			if(!persistentCb.Checked) mainLogText.Text = null;
-			mainLogText.WriteLine($"Monitor Changed: {watcher.GetCurFileName()}");
-			this.Text = $"LogViewer: {watcher.GetCurFileName()}";
+			mainLogText.WriteLine($"Monitor Changed: {watcher.CurFileName}");
+			this.Text = $"LogViewer: {watcher.CurFileName}";
 			UpdateFileContent();
 		}
 		private void UpdateCondition() {
@@ -152,7 +150,7 @@ namespace LogViewer {
 		}
 		private long lastFileSize = 0;
 		private void UpdateFileContent() {
-			string fullpath = watcher.GetCurFolderPath();
+			string fullpath = watcher.CurFilePath;
 			int lineLimit = readLastLinesInput.Text.Length > 0 ? (int)readLastLinesInput.Value : 5000;
 			try {
 				FileInfo file = new FileInfo(fullpath);
@@ -321,7 +319,7 @@ namespace LogViewer {
 		#region path
 		private bool checkFolder() {
 			folderTextBox.BackColor = SystemColors.Window;
-			if (!Directory.Exists(folderTextBox.Text)) {
+			if (Utility.HasInvalidPathCharacters(folderTextBox.Text)) {
 				folderTextBox.BackColor = Color.IndianRed;
 				return false;
 			}
@@ -361,7 +359,7 @@ namespace LogViewer {
 		}
 
 		private void folderTextBox_TextChanged(object sender, EventArgs e) {
-			if (folderTextBox.Text.StartsWith(@"\")) return; // skip checking for share folder while typing
+			if (folderTextBox.Text.StartsWith(@"\")) return; // skip checking for share folderPath while typing
 			checkFolder();
 		}
 		#endregion path
@@ -446,7 +444,7 @@ namespace LogViewer {
 		private void reloadBtn_Click(object sender, EventArgs e) {
 			mainLogText.Text = null;
 			lastFileSize = 0;
-			UpdateFileContent();
+			watcher.Restart();
 		}
 		private void mainLogText_KeyUp(object sender, KeyEventArgs e) {
 			if (e.Control && e.KeyCode == Keys.F) {
