@@ -35,6 +35,8 @@ namespace LogViewer
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
 			this.toggleOptionBtn = new System.Windows.Forms.Button();
 			this.optionPanel = new System.Windows.Forms.Panel();
+			this.wordWrapCb = new System.Windows.Forms.CheckBox();
+			this.mainLogText = new LogViewer.RichTextBoxEx();
 			this.bufferedDrawCb = new System.Windows.Forms.CheckBox();
 			this.saveBtn = new System.Windows.Forms.Button();
 			this.persistentCb = new System.Windows.Forms.CheckBox();
@@ -43,6 +45,7 @@ namespace LogViewer
 			this.highlightDataGrid = new System.Windows.Forms.DataGridView();
 			this.colorColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
 			this.textColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.fontBtn = new System.Windows.Forms.Button();
 			this.filenameRegexCb = new System.Windows.Forms.CheckBox();
 			this.excludeTextBox = new System.Windows.Forms.TextBox();
 			this.excludeLabel = new System.Windows.Forms.Label();
@@ -65,9 +68,6 @@ namespace LogViewer
 			this.findPanel = new System.Windows.Forms.Panel();
 			this.findTextbox = new System.Windows.Forms.TextBox();
 			this.findLabel = new System.Windows.Forms.Label();
-			this.wordWrapCb = new System.Windows.Forms.CheckBox();
-			this.mainLogText = new LogViewer.RichTextBoxEx();
-			this.fontBtn = new System.Windows.Forms.Button();
 			this.optionPanel.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.readLastLinesInput)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.highlightDataGrid)).BeginInit();
@@ -124,6 +124,36 @@ namespace LogViewer
 			this.optionPanel.Size = new System.Drawing.Size(998, 159);
 			this.optionPanel.TabIndex = 2;
 			this.optionPanel.Visible = false;
+			// 
+			// wordWrapCb
+			// 
+			this.wordWrapCb.AutoSize = true;
+			this.wordWrapCb.Checked = this.mainLogText.WordWrap;
+			this.wordWrapCb.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.wordWrapCb.Location = new System.Drawing.Point(442, 110);
+			this.wordWrapCb.Name = "wordWrapCb";
+			this.wordWrapCb.Size = new System.Drawing.Size(81, 17);
+			this.wordWrapCb.TabIndex = 11;
+			this.wordWrapCb.Text = "Word Wrap";
+			this.wordWrapCb.UseVisualStyleBackColor = true;
+			// 
+			// mainLogText
+			// 
+			this.mainLogText.BackColor = System.Drawing.Color.Black;
+			this.mainLogText.BorderStyle = System.Windows.Forms.BorderStyle.None;
+			this.mainLogText.CausesValidation = false;
+			this.mainLogText.DetectUrls = false;
+			this.mainLogText.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.mainLogText.Font = new System.Drawing.Font("Consolas", 9F);
+			this.mainLogText.ForeColor = System.Drawing.Color.White;
+			this.mainLogText.HideSelection = false;
+			this.mainLogText.Location = new System.Drawing.Point(0, 0);
+			this.mainLogText.Margin = new System.Windows.Forms.Padding(0);
+			this.mainLogText.Name = "mainLogText";
+			this.mainLogText.ReadOnly = true;
+			this.mainLogText.Size = new System.Drawing.Size(998, 392);
+			this.mainLogText.TabIndex = 0;
+			this.mainLogText.Text = "";
 			// 
 			// bufferedDrawCb
 			// 
@@ -243,6 +273,23 @@ namespace LogViewer
 			this.textColumn.Name = "textColumn";
 			this.textColumn.Resizable = System.Windows.Forms.DataGridViewTriState.False;
 			this.textColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+			// 
+			// fontBtn
+			// 
+			this.fontBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.fontBtn.BackColor = System.Drawing.Color.DimGray;
+			this.fontBtn.FlatAppearance.BorderSize = 0;
+			this.fontBtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+			this.fontBtn.Font = this.mainLogText.Font;
+			this.fontBtn.ForeColor = System.Drawing.Color.White;
+			this.fontBtn.Location = new System.Drawing.Point(743, 83);
+			this.fontBtn.Margin = new System.Windows.Forms.Padding(0);
+			this.fontBtn.Name = "fontBtn";
+			this.fontBtn.Size = new System.Drawing.Size(190, 23);
+			this.fontBtn.TabIndex = 9;
+			this.fontBtn.Text = "Font";
+			this.fontBtn.UseVisualStyleBackColor = false;
+			this.fontBtn.Click += new System.EventHandler(this.fontBtn_Click);
 			// 
 			// filenameRegexCb
 			// 
@@ -464,53 +511,6 @@ namespace LogViewer
 			this.findLabel.Size = new System.Drawing.Size(30, 13);
 			this.findLabel.TabIndex = 14;
 			this.findLabel.Text = "Find:";
-			// 
-			// wordWrapCb
-			// 
-			this.wordWrapCb.AutoSize = true;
-			this.wordWrapCb.Checked = this.mainLogText.WordWrap;
-			this.wordWrapCb.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.wordWrapCb.Location = new System.Drawing.Point(442, 110);
-			this.wordWrapCb.Name = "wordWrapCb";
-			this.wordWrapCb.Size = new System.Drawing.Size(81, 17);
-			this.wordWrapCb.TabIndex = 11;
-			this.wordWrapCb.Text = "Word Wrap";
-			this.wordWrapCb.UseVisualStyleBackColor = true;
-			// 
-			// mainLogText
-			// 
-			this.mainLogText.BackColor = System.Drawing.Color.Black;
-			this.mainLogText.BorderStyle = System.Windows.Forms.BorderStyle.None;
-			this.mainLogText.CausesValidation = false;
-			this.mainLogText.DetectUrls = false;
-			this.mainLogText.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.mainLogText.Font = new System.Drawing.Font("Consolas", 9F);
-			this.mainLogText.ForeColor = System.Drawing.Color.White;
-			this.mainLogText.HideSelection = false;
-			this.mainLogText.Location = new System.Drawing.Point(0, 0);
-			this.mainLogText.Margin = new System.Windows.Forms.Padding(0);
-			this.mainLogText.Name = "mainLogText";
-			this.mainLogText.ReadOnly = true;
-			this.mainLogText.Size = new System.Drawing.Size(998, 392);
-			this.mainLogText.TabIndex = 0;
-			this.mainLogText.Text = "";
-			// 
-			// fontBtn
-			// 
-			this.fontBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.fontBtn.BackColor = System.Drawing.Color.DimGray;
-			this.fontBtn.FlatAppearance.BorderSize = 0;
-			this.fontBtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-			this.fontBtn.Font = this.mainLogText.Font;
-			this.fontBtn.ForeColor = System.Drawing.Color.White;
-			this.fontBtn.Location = new System.Drawing.Point(743, 83);
-			this.fontBtn.Margin = new System.Windows.Forms.Padding(0);
-			this.fontBtn.Name = "fontBtn";
-			this.fontBtn.Size = new System.Drawing.Size(190, 23);
-			this.fontBtn.TabIndex = 9;
-			this.fontBtn.Text = "Font";
-			this.fontBtn.UseVisualStyleBackColor = false;
-			this.fontBtn.Click += new System.EventHandler(this.fontBtn_Click);
 			// 
 			// MainForm
 			// 
