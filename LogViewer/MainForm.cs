@@ -58,8 +58,8 @@ namespace LogViewer {
 			saveFileDialog1.Title = "Save Config";
 			saveFileDialog1.Filter = "Config (*.LogViewerConfig)|*.LogViewerConfig";
 			watcher = new LogFileWatcher();
-			watcher.TargetChanged += Watcher_TargetChanged;
-			watcher.ContentChanged += (s, e) => { UpdateFileContent(); };
+			watcher.TargetChangedHandler += Watcher_TargetChanged;
+			watcher.ContentChangedHandler += (s, e) => { UpdateFileContent(); };
 			watcher.SynchronizingObject = this;
 			mainLogText.KeyUp += mainLogText_KeyUp;
 			findTextbox.KeyUp += findTextbox_KeyUp;

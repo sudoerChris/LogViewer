@@ -9,7 +9,7 @@ using System.Timers;
 using System.Windows.Forms;
 
 namespace LogViewer {
-	internal class LogFileWatcherWorker: ISynchronizeInvoke {
+	internal class LogFileWatcher : ISynchronizeInvoke {
 		#region outgoing event
 		public ISynchronizeInvoke SynchronizingObject = null;
 		public event FileSystemEventHandler ContentChangedHandler;
@@ -39,10 +39,11 @@ namespace LogViewer {
 		private string filePattern;
 		private Regex filePatternRegex;
 		private bool filePatternIsRegex;
-		public LogFileWatcherWorker(LogFileWatcher parent) {
-			InitWatcher();
-			contextThread = Thread.CurrentThread;
-			parent.OnSetCondition += (folder, pattern, regex) => { SetCondition(folder, pattern, regex); };
+		public LogFileWatcher() {
+			workerThread = new Thread(WorkerMethod) {
+				IsBackground = true
+			};
+			workerThread.Start();
 		}
 		private void InitWatcher() {
 			logFolderWatcher.BeginInit();
@@ -81,7 +82,11 @@ namespace LogViewer {
 			waitFolderTimer.EndInit();
 		}
 		#region start/stop
-		private void Restart() {
+		public void Restart() {
+			if (InvokeRequired) {
+				BeginInvoke(new Action(Restart),null);
+				return;
+			}
 			Stop();
 			Start();
 		}
@@ -100,7 +105,7 @@ namespace LogViewer {
 		private bool StartFolderWatcher() {
 			if (!Directory.Exists(folderPath)) {
 				// folderPath not exist, start waiting timer
-				if(!Utility.DirectoryAuthorized(folderPath)) {
+				if (!Utility.DirectoryAuthorized(folderPath)) {
 					// TODO: implemente username and password
 				}
 				logFolderWatcher.EnableRaisingEvents = false;
@@ -132,7 +137,11 @@ namespace LogViewer {
 		}
 		#endregion start/stop
 
-		private void SetCondition(string folder, string pattern, bool regex) {
+		public void SetCondition(string folder, string pattern, bool regex) {
+			if (InvokeRequired) {
+				BeginInvoke(new Action<string, string, bool>(SetCondition), new object[]{ folder, pattern, regex});
+				return;
+			}
 			if (folderPath == folder && filePattern == pattern && filePatternIsRegex == regex) {
 				//nothing changed
 				Start();
@@ -233,226 +242,131 @@ namespace LogViewer {
 		private readonly System.Timers.Timer fileWatcherTimer = new System.Timers.Timer();
 		private readonly System.Timers.Timer waitFolderTimer = new System.Timers.Timer();
 		private void logFolderWatcher_Created(object sender, FileSystemEventArgs e) {
-			if (e.FullPath == CurFilePath || !CheckFilenamePattern(e.Name)) return;
-			SetTarget(e.FullPath);
+				if (e.FullPath == CurFilePath || !CheckFilenamePattern(e.Name)) return;
+				SetTarget(e.FullPath);
 		}
 		private void waitFolderTimer_Elapsed(object sender, ElapsedEventArgs e) {
-			if (CurFilePath.Length == 0) {
-				Stop();
-				return;
-			}
-			try {
-				if (Utility.DirectoryExist(folderPath)) { 
-					Start();
+				if (CurFilePath.Length == 0) {
+					Stop();
 					return;
 				}
-				waitFolderTimer.Start();
-			}
-			catch (Exception ex) {
-				System.Diagnostics.Debug.WriteLine("waitFolderTimer_Elapsed Error occurred: " + ex.Message);
-				Start();
-			}
+				try {
+					if (Utility.DirectoryExist(folderPath)) {
+						Start();
+						return;
+					}
+					waitFolderTimer.Start();
+				}
+				catch (Exception ex) {
+					System.Diagnostics.Debug.WriteLine("waitFolderTimer_Elapsed Error occurred: " + ex.Message);
+					Start();
+				}
 		}
 
 		DateTime fileWatcherTimer_lastWriteTime = DateTime.MinValue;
 		long fileWatcherTimer_length = 0;
 		private void fileWatcherTimer_Elapsed(object sender, ElapsedEventArgs e) {
-			bool required = InvokeRequired;
-			if (CurFilePath.Length == 0) {
-				Stop();
-				return;
-			}
-			try {
-				FileInfo info = new FileInfo(CurFilePath);
-				using (FileStream fileStream = new FileStream(CurFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-					if (fileWatcherTimer_lastWriteTime != info.LastWriteTime || fileWatcherTimer_length != fileStream.Length) {
-						fileWatcherTimer_lastWriteTime = info.LastWriteTime;
-						fileWatcherTimer_length = fileStream.Length;
-						OnContentChanged(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, info.DirectoryName, info.Name));
+				if (CurFilePath.Length == 0) {
+					Stop();
+					return;
+				}
+				try {
+					FileInfo info = new FileInfo(CurFilePath);
+					using (FileStream fileStream = new FileStream(CurFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+						if (fileWatcherTimer_lastWriteTime != info.LastWriteTime || fileWatcherTimer_length != fileStream.Length) {
+							fileWatcherTimer_lastWriteTime = info.LastWriteTime;
+							fileWatcherTimer_length = fileStream.Length;
+							OnContentChanged(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, info.DirectoryName, info.Name));
+						}
 					}
-				}
-				fileWatcherTimer.Start();
-				}
-			catch (Exception ex) {
-				System.Diagnostics.Debug.WriteLine("fileWatcherTimer_Elapsed Error occurred: " + ex.Message);
-				Start();
-			}
-		}
-		private void logFileWatcher_Changed(object sender, FileSystemEventArgs e) {
-			try {
-				FileInfo info = new FileInfo(CurFilePath);
-				if (fileWatcherTimer_lastWriteTime != info.LastWriteTime || fileWatcherTimer_length != info.Length) {
-					fileWatcherTimer_lastWriteTime = info.LastWriteTime;
-					fileWatcherTimer_length = info.Length;
-					OnContentChanged(this, e);
 					fileWatcherTimer.Start();
 				}
-			}
-			catch (Exception ex) {
-				System.Diagnostics.Debug.WriteLine("logFileWatcher_Changed Error occurred: " + ex.Message);
-			}
+				catch (Exception ex) {
+					System.Diagnostics.Debug.WriteLine("fileWatcherTimer_Elapsed Error occurred: " + ex.Message);
+					Start();
+				}
+		}
+		private void logFileWatcher_Changed(object sender, FileSystemEventArgs e) {
+				try {
+					FileInfo info = new FileInfo(CurFilePath);
+					if (fileWatcherTimer_lastWriteTime != info.LastWriteTime || fileWatcherTimer_length != info.Length) {
+						fileWatcherTimer_lastWriteTime = info.LastWriteTime;
+						fileWatcherTimer_length = info.Length;
+						OnContentChanged(this, e);
+						fileWatcherTimer.Start();
+					}
+				}
+				catch (Exception ex) {
+					System.Diagnostics.Debug.WriteLine("logFileWatcher_Changed Error occurred: " + ex.Message);
+				}
 		}
 		private void logFileWatcher_Deleted(object sender, FileSystemEventArgs e) {
-			StopFileWatcher();
+				StopFileWatcher();
 		}
-
-
 		#endregion filesystem event
-		#region ISynchronizeInvoke
 
-		private readonly Thread contextThread;
-		public bool InvokeRequired {
-			get {
-				bool required = Thread.CurrentThread != contextThread;
-				return required;
-			}
-		}
+		#region ISynchronizeInvoke
+		private readonly Thread workerThread;
+		private readonly object syncObject = new object();
+		private readonly ManualResetEvent operationPendingEvent = new ManualResetEvent(false);
+		private Delegate queuedDelegate;
+		private object[] queuedArgs;
+		private object result;
+
+		public bool InvokeRequired => Thread.CurrentThread != workerThread;
+
 		public IAsyncResult BeginInvoke(Delegate method, object[] args) {
-			if (Thread.CurrentThread == contextThread) {
-				// If we are already in the context thread, directly invoke the method
-				return new MyAsyncResult(method.DynamicInvoke(args));
-			}
-			else {
-				// Otherwise, asynchronously invoke the method in the context thread
-				return new MyAsyncResult(contextThread, method, args);
+			lock (syncObject) {
+				queuedDelegate = method;
+				queuedArgs = args;
+				operationPendingEvent.Set();
+				return new DummyAsyncResult();
 			}
 		}
 
 		public object EndInvoke(IAsyncResult result) {
-			return ((MyAsyncResult)result).Result;
+			return this.result;
 		}
 
 		public object Invoke(Delegate method, object[] args) {
-			if (Thread.CurrentThread == contextThread) {
-				// If we are already in the context thread, directly invoke the method
-				return method.DynamicInvoke(args);
+			if (InvokeRequired) {
+				var asyncResult = BeginInvoke(method, args);
+				asyncResult.AsyncWaitHandle.WaitOne();
+				return EndInvoke(asyncResult);
 			}
 			else {
-				// Otherwise, synchronously invoke the method in the context thread
-				MyAsyncResult asyncResult = new MyAsyncResult(contextThread, method, args);
-				asyncResult.AsyncWaitHandle.WaitOne();
-				return asyncResult.Result;
+				return method.DynamicInvoke(args);
 			}
 		}
-		private class MyAsyncResult : IAsyncResult {
-			private readonly object syncObject = new object();
-			private readonly Thread contextThread;
-			private readonly Delegate method;
-			private readonly object[] args;
-			private object result;
+		// worker thread
+		private void WorkerMethod() {
+			InitWatcher();
+			while (true) {
+				operationPendingEvent.WaitOne();
+				Delegate method;
+				object[] args;
 
-			public MyAsyncResult(object result) {
-				this.result = result;
-			}
-
-			public MyAsyncResult(Thread contextThread, Delegate method, object[] args) {
-				this.contextThread = contextThread;
-				this.method = method;
-				this.args = args;
-				ThreadPool.QueueUserWorkItem(InvokeMethod);
-			}
-
-			private void InvokeMethod(object state) {
-				result = method.DynamicInvoke(args);
 				lock (syncObject) {
-					Monitor.Pulse(syncObject);
+					method = queuedDelegate;
+					args = queuedArgs;
+					queuedDelegate = null;
+					queuedArgs = null;
+					operationPendingEvent.Reset();
+				}
+
+				if (method != null) {
+					result = method.DynamicInvoke(args);
+					operationPendingEvent.Set();
 				}
 			}
+		}
 
-			public object Result {
-				get {
-					if (Thread.CurrentThread != contextThread) {
-						lock (syncObject) {
-							Monitor.Wait(syncObject);
-						}
-					}
-					return result;
-				}
-			}
-
-			// Implementation of the IAsyncResult interface
-
+		private class DummyAsyncResult : IAsyncResult {
 			public object AsyncState => null;
-
-			public WaitHandle AsyncWaitHandle => new ManualResetEvent(false);
-
+			public WaitHandle AsyncWaitHandle => null;
 			public bool CompletedSynchronously => true;
-
 			public bool IsCompleted => true;
 		}
-		#endregion
-
-
-	}
-
-	internal class LogFileWatcher {
-		// for LogFileWatcherWorker
-		public delegate void SetConditionHandler(string folder, string pattern, bool regex);
-		public event SetConditionHandler OnSetCondition;
-
-		// for Consumer
-		public event FileSystemEventHandler ContentChanged;
-		public event FileSystemEventHandler TargetChanged;
-		private ISynchronizeInvoke synchronizingObject = null;
-		public ISynchronizeInvoke SynchronizingObject {
-			set {
-				synchronizingObject = value;
-				if (worker != null)
-					worker.SynchronizingObject = value;
-			}
-			get { return synchronizingObject; }
-		}
-
-		public string CurFileName { get { return worker.CurFileName; } }
-		public string CurFilePath { get { return worker.CurFilePath; } }
-
-		// private member
-		private Thread workerThread = null;
-		private LogFileWatcherWorker worker;
-		private ManualResetEvent workerCreatedEvent = new ManualResetEvent(false);
-		// public method
-		public LogFileWatcher() {
-		}
-		public void Restart() {
-			Stop();
-			Start();
-		}
-		public void Start() {
-			if (workerThread != null && workerThread.ThreadState == ThreadState.Running) return;
-			workerCreatedEvent.Reset();
-			workerThread = new Thread(StartWorker);
-			workerThread.Name = "LogFileWatcherWorker";
-			workerThread.Start();
-			workerCreatedEvent.WaitOne();
-		}
-		public void Stop() {
-			if (workerThread == null) return;
-			workerThread.Abort();
-			workerThread = null;
-		}
-
-		public void SetCondition(string folder, string pattern, bool regex) {
-			Start();
-			if(worker.InvokeRequired)
-				worker.BeginInvoke(OnSetCondition, new object[] { folder, pattern, regex });
-			else
-				OnSetCondition(folder, pattern, regex);
-		}
-
-		private void StartWorker() {
-			worker = new LogFileWatcherWorker(this);
-			worker.TargetChangedHandler += Worker_TargetChanged;
-			worker.ContentChangedHandler += Worker_ContentChanged;
-			worker.SynchronizingObject = synchronizingObject;
-			workerCreatedEvent.Set();
-		}
-
-		private void Worker_TargetChanged(object sender, FileSystemEventArgs e) {
-			TargetChanged(sender, e);
-		}
-
-		private void Worker_ContentChanged(object sender, FileSystemEventArgs e) {
-			ContentChanged(sender,e);
-		}
+		#endregion ISynchronizeInvoke
 	}
 }
