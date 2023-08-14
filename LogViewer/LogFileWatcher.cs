@@ -1,12 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.Remoting.Contexts;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Timers;
-using System.Windows.Forms;
 
 namespace LogViewer {
 	internal class LogFileWatcher : ISynchronizeInvoke {
@@ -309,23 +308,24 @@ namespace LogViewer {
 		private readonly Thread workerThread;
 		private readonly object syncObject = new object();
 		private readonly ManualResetEvent operationPendingEvent = new ManualResetEvent(false);
-		private Delegate queuedDelegate;
-		private object[] queuedArgs;
+		private Queue<AsyncResult> taskQueue = new Queue<AsyncResult>();
 		private object result;
 
 		public bool InvokeRequired => Thread.CurrentThread != workerThread;
 
 		public IAsyncResult BeginInvoke(Delegate method, object[] args) {
 			lock (syncObject) {
-				queuedDelegate = method;
-				queuedArgs = args;
+				AsyncResult task = new AsyncResult(method, args);
+				taskQueue.Enqueue(task);
 				operationPendingEvent.Set();
-				return new DummyAsyncResult();
+				return task;
 			}
 		}
 
 		public object EndInvoke(IAsyncResult result) {
-			return this.result;
+			AsyncResult task = result as AsyncResult;
+			task.AsyncWaitHandle.WaitOne();
+			return task.retVal;
 		}
 
 		public object Invoke(Delegate method, object[] args) {
@@ -343,29 +343,69 @@ namespace LogViewer {
 			InitWatcher();
 			while (true) {
 				operationPendingEvent.WaitOne();
-				Delegate method;
-				object[] args;
-
 				lock (syncObject) {
-					method = queuedDelegate;
-					args = queuedArgs;
-					queuedDelegate = null;
-					queuedArgs = null;
+					while (taskQueue.Count > 0) {
+						AsyncResult task = (AsyncResult)taskQueue.Dequeue();
+						task.retVal = task.method.DynamicInvoke(task.args);
+						task.Complete();
+					}
 					operationPendingEvent.Reset();
-				}
-
-				if (method != null) {
-					result = method.DynamicInvoke(args);
-					operationPendingEvent.Set();
 				}
 			}
 		}
 
-		private class DummyAsyncResult : IAsyncResult {
+		private class AsyncResult : IAsyncResult {
+			internal Delegate method;
+			internal object[] args;
+			internal object retVal;
+			internal Exception exception = null;
+			internal bool synchronous = false;
+			private bool isCompleted = false;
+			private ManualResetEvent resetEvent = new ManualResetEvent(initialState: false);
+			private object invokeSyncObject = new object();
 			public object AsyncState => null;
-			public WaitHandle AsyncWaitHandle => null;
-			public bool CompletedSynchronously => true;
-			public bool IsCompleted => true;
+
+			public WaitHandle AsyncWaitHandle {
+				get {
+					lock (invokeSyncObject) {
+						if (isCompleted) {
+							resetEvent.Set();
+						}
+					}
+					return resetEvent;
+				}
+			}
+
+			public bool CompletedSynchronously {
+				get {
+					if (isCompleted && synchronous) {
+						return true;
+					}
+
+					return false;
+				}
+			}
+
+			public bool IsCompleted => isCompleted;
+
+			internal AsyncResult(Delegate method, object[] args, bool synchronous = false) {
+				this.method = method;
+				this.args = args;
+				this.synchronous = synchronous;
+			}
+
+			~AsyncResult() {
+				resetEvent?.Close();
+			}
+
+			internal void Complete() {
+				lock (invokeSyncObject) {
+					isCompleted = true;
+					if (resetEvent != null) {
+						resetEvent.Set();
+					}
+				}
+			}
 		}
 		#endregion ISynchronizeInvoke
 	}

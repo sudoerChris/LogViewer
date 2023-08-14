@@ -95,15 +95,17 @@ namespace LogViewer {
 			if (lines.Count == 0) return;
 			BeginWrite();
 			if (TextLength > 0 && !newFirstLine) {
-				Select(TextLength - 1, 1);
-				SelectedText = "";
+				Select(TextLength-1, 1);
+			}
+			else {
+				Select(TextLength , 0);
 			}
 			for (int i = 0; i < lines.Count; i++) {
 				if (TextLength + lines[i].Length > 10_000_000) {
 					RemoveFirst(lines[i].Length * (lines.Count - i));
 				}
 				int lineStartIndex = TextLength;
-				AppendText(lines[i]);
+				SelectedText = lines[i];
 				foreach (HighlightItem item in highlightItems) {
 					if (item.PatternRegex == null) continue;
 					foreach (Match m in item.PatternRegex.Matches(lines[i])) {
