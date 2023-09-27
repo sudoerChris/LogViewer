@@ -105,7 +105,7 @@ namespace LogViewer {
 					RemoveFirst(lines[i].Length * (lines.Count - i));
 				}
 				int lineStartIndex = TextLength;
-				SelectedText = lines[i];
+				SelectedText = lines[i] + "\n";
 				foreach (HighlightItem item in highlightItems) {
 					if (item.PatternRegex == null) continue;
 					foreach (Match m in item.PatternRegex.Matches(lines[i])) {

@@ -15,7 +15,6 @@ namespace LogViewer {
 		public event FileSystemEventHandler TargetChangedHandler;
 		private void OnContentChanged(object sender, FileSystemEventArgs e) {
 			if (SynchronizingObject != null && SynchronizingObject.InvokeRequired) {
-
 				SynchronizingObject.BeginInvoke(ContentChangedHandler, new object[] { sender, e });
 			}
 			else {
@@ -24,7 +23,6 @@ namespace LogViewer {
 		}
 		private void OnTargetChanged(object sender, FileSystemEventArgs e) {
 			if (SynchronizingObject != null && SynchronizingObject.InvokeRequired) {
-
 				SynchronizingObject.BeginInvoke(TargetChangedHandler, new object[] { sender, e });
 			}
 			else {
@@ -43,6 +41,21 @@ namespace LogViewer {
 				IsBackground = true
 			};
 			workerThread.Start();
+		}
+		// worker thread
+		private void WorkerMethod() {
+			InitWatcher();
+			while (true) {
+				operationPendingEvent.WaitOne();
+				lock (syncObject) {
+					while (taskQueue.Count > 0) {
+						AsyncResult task = (AsyncResult)taskQueue.Dequeue();
+						task.retVal = task.method.DynamicInvoke(task.args);
+						task.Complete();
+					}
+					operationPendingEvent.Reset();
+				}
+			}
 		}
 		private void InitWatcher() {
 			logFolderWatcher.BeginInit();
@@ -278,6 +291,7 @@ namespace LogViewer {
 							OnContentChanged(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, info.DirectoryName, info.Name));
 						}
 					}
+					SelectLastWriteFile();
 					fileWatcherTimer.Start();
 				}
 				catch (Exception ex) {
@@ -336,21 +350,6 @@ namespace LogViewer {
 			}
 			else {
 				return method.DynamicInvoke(args);
-			}
-		}
-		// worker thread
-		private void WorkerMethod() {
-			InitWatcher();
-			while (true) {
-				operationPendingEvent.WaitOne();
-				lock (syncObject) {
-					while (taskQueue.Count > 0) {
-						AsyncResult task = (AsyncResult)taskQueue.Dequeue();
-						task.retVal = task.method.DynamicInvoke(task.args);
-						task.Complete();
-					}
-					operationPendingEvent.Reset();
-				}
 			}
 		}
 

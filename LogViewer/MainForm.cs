@@ -124,9 +124,7 @@ namespace LogViewer {
 			alwaysOnTopCb.Checked = configManager.config.AlwaysOnTop;
 			SetFont(new Font(configManager.config.FontFamilyName, configManager.config.FontSize, (FontStyle)configManager.config.FontStyle));
 			mainLogText.highlightItems = new List<HighlightItem>(configManager.config.HighlightItems);
-			if (configManager.config.W > -1 && configManager.config.H > -1) {
-				Bounds = new Rectangle(configManager.config.X, configManager.config.Y, configManager.config.W, configManager.config.H);
-			}
+			SetGeometry(configManager.config.X, configManager.config.Y, configManager.config.W, configManager.config.H);
 			highlightDataGrid.Rows.Clear();
 			foreach (HighlightItem item in mainLogText.highlightItems) {
 				highlightDataGrid.Rows.Add(GetNewRow(item.PatternRegex.ToString(), item.HighlightColor));
@@ -134,7 +132,31 @@ namespace LogViewer {
 			return true;
 		}
 		public void SetGeometry(int x, int y, int w, int h) {
-			Bounds = new Rectangle(x, y, w, h);
+			if(x == int.MinValue) {
+				x = Bounds.X;
+			}
+			if(y == int.MinValue) {
+				y = Bounds.Y;
+			}
+			if (w == int.MinValue) {
+				w = Bounds.Width;
+			}
+			if (h == int.MinValue) {
+				h = Bounds.Height;
+			}
+			bool isWithinScreenBounds = false;
+			foreach (Screen screen in Screen.AllScreens) {
+				Rectangle screenBounds = screen.Bounds;
+				isWithinScreenBounds |=
+						(x - 10 >= screenBounds.Left && x + 10 <= screenBounds.Right && y >= screenBounds.Top && y + 10 <= screenBounds.Bottom) || // TL
+						((x + w - 10) >= screenBounds.Left && (x + w + 10) <= screenBounds.Right && y >= screenBounds.Top && y + 10 <= screenBounds.Bottom); // TR
+				if (isWithinScreenBounds) {
+					break;
+				}
+			}
+			if (isWithinScreenBounds) {
+				Bounds = new Rectangle(x, y, w, h);
+			}
 		}
 #endregion
 
@@ -178,7 +200,7 @@ namespace LogViewer {
 								if (excludeRegex != null) {
 									if (excludeRegex.IsMatch(line)) continue;
 								}
-								lines.Add(line + "\n");
+								lines.Add(line);
 								// maintain line limit
 								if (lines.Count > lineLimit) {
 									lines.RemoveAt(0);
