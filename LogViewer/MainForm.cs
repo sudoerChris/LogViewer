@@ -132,10 +132,10 @@ namespace LogViewer {
 			return true;
 		}
 		public void SetGeometry(int x, int y, int w, int h) {
-			if(x == int.MinValue) {
+			if (x == int.MinValue) {
 				x = Bounds.X;
 			}
-			if(y == int.MinValue) {
+			if (y == int.MinValue) {
 				y = Bounds.Y;
 			}
 			if (w == int.MinValue) {
@@ -158,12 +158,12 @@ namespace LogViewer {
 				Bounds = new Rectangle(x, y, w, h);
 			}
 		}
-#endregion
+		#endregion
 
 		#region print log file
 		private void Watcher_TargetChanged(object sender, FileSystemEventArgs e) {
 			lastFileSize = 0;
-			if(!persistentCb.Checked) mainLogText.Text = null;
+			if (!persistentCb.Checked) mainLogText.Text = null;
 			mainLogText.WriteLine($"Monitor Changed: {watcher.CurFileName}");
 			this.Text = $"LogViewer: {watcher.CurFileName}";
 			UpdateFileContent();
@@ -213,8 +213,9 @@ namespace LogViewer {
 					}
 				}
 				lastFileSize = file.Length;
-			}catch(Exception ex) {
-				mainLogText.WriteLine(ex.Message,Color.Red);
+			}
+			catch (Exception ex) {
+				mainLogText.WriteLine(ex.Message, Color.Red);
 			}
 		}
 
@@ -258,7 +259,7 @@ namespace LogViewer {
 			foreach (DataGridViewRow row in highlightDataGrid.Rows) {
 				unusedBackColor.Remove(row.Cells[0].Style.BackColor);
 			}
-			if(unusedBackColor.Count == 0) {
+			if (unusedBackColor.Count == 0) {
 				unusedBackColor.Add(defaultHighlightBackColors.First());
 			}
 			mainLogText.highlightItems.Add(new HighlightItem() { HighlightColor = unusedBackColor.First() });
@@ -288,7 +289,7 @@ namespace LogViewer {
 			catch {
 				highlightDataGrid.CurrentCell.Style.BackColor = Color.Red;
 			}
-			
+
 		}
 
 		private void highlightDataGrid_LostFocus(object sender, EventArgs e) {
@@ -299,7 +300,7 @@ namespace LogViewer {
 			bool focusInternal = false;
 			StackTrace st = new StackTrace();
 			for (int i = 0; i < st.FrameCount; i++) {
-				if(st.GetFrame(i).GetMethod().Module.Name == "System.Windows.Forms.dll" && st.GetFrame(i).GetMethod().Name == "FocusInternal") {
+				if (st.GetFrame(i).GetMethod().Module.Name == "System.Windows.Forms.dll" && st.GetFrame(i).GetMethod().Name == "FocusInternal") {
 					focusInternal = true;
 					break;
 				}
@@ -311,10 +312,10 @@ namespace LogViewer {
 		}
 
 		private void highlightDataGrid_CellDoubleClick(object sender, DataGridViewCellEventArgs e) {
-			if(e.ColumnIndex == 0) {
+			if (e.ColumnIndex == 0) {
 				colorDialog1.Color = mainLogText.highlightItems[e.RowIndex].HighlightColor;
 				DialogResult result = colorDialog1.ShowDialog();
-				if(result == DialogResult.OK) {
+				if (result == DialogResult.OK) {
 					mainLogText.highlightItems[e.RowIndex].HighlightColor = colorDialog1.Color;
 					foreach (DataGridViewCell cell in highlightDataGrid.Rows[e.RowIndex].Cells) {
 						cell.Style.BackColor = colorDialog1.Color;
@@ -361,7 +362,7 @@ namespace LogViewer {
 				}
 			}
 			else {
-				if(invalidNonWildcardPathChar.IsMatch(filenameTextbox.Text)) {
+				if (invalidNonWildcardPathChar.IsMatch(filenameTextbox.Text)) {
 					filenameTextbox.BackColor = Color.IndianRed;
 					return false;
 				}
@@ -390,7 +391,7 @@ namespace LogViewer {
 		#region font
 		private void SetFont(Font font) {
 			fontBtn.Text = $"{font.Name}, {font.SizeInPoints:0.##} pt";
-			fontBtn.Font = new Font(font.FontFamily,fontBtn.Font.Size);
+			fontBtn.Font = new Font(font.FontFamily, fontBtn.Font.Size);
 			mainLogText.Font = font;
 		}
 		private void fontBtn_Click(object sender, EventArgs e) {
@@ -503,7 +504,7 @@ namespace LogViewer {
 		}
 		#endregion UI Event
 
-		private void testBtn_Click(object sender, EventArgs e){
+		private void testBtn_Click(object sender, EventArgs e) {
 		}
 	}
 }

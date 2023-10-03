@@ -96,7 +96,7 @@ namespace LogViewer {
 		#region start/stop
 		public void Restart() {
 			if (InvokeRequired) {
-				BeginInvoke(new Action(Restart),null);
+				BeginInvoke(new Action(Restart), null);
 				return;
 			}
 			Stop();
@@ -146,15 +146,18 @@ namespace LogViewer {
 		private void StopFileWatcher() {
 			logFileWatcher.EnableRaisingEvents = false;
 			fileWatcherTimer.Stop();
+			fileWatcherTimer_lastWriteTime = DateTime.MinValue;
+			fileWatcherTimer_length = 0;
 		}
 		#endregion start/stop
 
 		public void SetCondition(string folder, string pattern, bool regex) {
 			if (InvokeRequired) {
-				BeginInvoke(new Action<string, string, bool>(SetCondition), new object[]{ folder, pattern, regex});
+				BeginInvoke(new Action<string, string, bool>(SetCondition), new object[] { folder, pattern, regex });
 				return;
 			}
-			if (folderPath == folder && filePattern == pattern && filePatternIsRegex == regex) {
+			string expandedFolder = Environment.ExpandEnvironmentVariables(folder);
+			if (folderPath == expandedFolder && filePattern == pattern && filePatternIsRegex == regex) {
 				//nothing changed
 				Start();
 				return;
@@ -162,9 +165,9 @@ namespace LogViewer {
 			Stop();
 			filePattern = pattern;
 			filePatternIsRegex = regex;
-			folderPath = folder;
-			if (Directory.Exists(folder)) {
-				logFolderWatcher.Path = logFileWatcher.Path = folder;
+			folderPath = expandedFolder;
+			if (Directory.Exists(folderPath)) {
+				logFolderWatcher.Path = logFileWatcher.Path = folderPath;
 			}
 			try {
 				if (pattern.Length == 0) {
@@ -254,67 +257,67 @@ namespace LogViewer {
 		private readonly System.Timers.Timer fileWatcherTimer = new System.Timers.Timer();
 		private readonly System.Timers.Timer waitFolderTimer = new System.Timers.Timer();
 		private void logFolderWatcher_Created(object sender, FileSystemEventArgs e) {
-				if (e.FullPath == CurFilePath || !CheckFilenamePattern(e.Name)) return;
-				SetTarget(e.FullPath);
+			if (e.FullPath == CurFilePath || !CheckFilenamePattern(e.Name)) return;
+			SetTarget(e.FullPath);
 		}
 		private void waitFolderTimer_Elapsed(object sender, ElapsedEventArgs e) {
-				if (CurFilePath.Length == 0) {
-					Stop();
+			if (CurFilePath.Length == 0) {
+				Stop();
+				return;
+			}
+			try {
+				if (Utility.DirectoryExist(folderPath)) {
+					Start();
 					return;
 				}
-				try {
-					if (Utility.DirectoryExist(folderPath)) {
-						Start();
-						return;
-					}
-					waitFolderTimer.Start();
-				}
-				catch (Exception ex) {
-					System.Diagnostics.Debug.WriteLine("waitFolderTimer_Elapsed Error occurred: " + ex.Message);
-					Start();
-				}
+				waitFolderTimer.Start();
+			}
+			catch (Exception ex) {
+				System.Diagnostics.Debug.WriteLine("waitFolderTimer_Elapsed Error occurred: " + ex.Message);
+				Start();
+			}
 		}
 
 		DateTime fileWatcherTimer_lastWriteTime = DateTime.MinValue;
 		long fileWatcherTimer_length = 0;
 		private void fileWatcherTimer_Elapsed(object sender, ElapsedEventArgs e) {
-				if (CurFilePath.Length == 0) {
-					Stop();
-					return;
-				}
-				try {
-					FileInfo info = new FileInfo(CurFilePath);
-					using (FileStream fileStream = new FileStream(CurFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-						if (fileWatcherTimer_lastWriteTime != info.LastWriteTime || fileWatcherTimer_length != fileStream.Length) {
-							fileWatcherTimer_lastWriteTime = info.LastWriteTime;
-							fileWatcherTimer_length = fileStream.Length;
-							OnContentChanged(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, info.DirectoryName, info.Name));
-						}
+			if (CurFilePath.Length == 0) {
+				Stop();
+				return;
+			}
+			try {
+				FileInfo info = new FileInfo(CurFilePath);
+				using (FileStream fileStream = new FileStream(CurFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+					if (fileWatcherTimer_lastWriteTime != info.LastWriteTime || fileWatcherTimer_length != fileStream.Length) {
+						fileWatcherTimer_lastWriteTime = info.LastWriteTime;
+						fileWatcherTimer_length = fileStream.Length;
+						OnContentChanged(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, info.DirectoryName, info.Name));
 					}
-					SelectLastWriteFile();
-					fileWatcherTimer.Start();
 				}
-				catch (Exception ex) {
-					System.Diagnostics.Debug.WriteLine("fileWatcherTimer_Elapsed Error occurred: " + ex.Message);
-					Start();
-				}
+				SelectLastWriteFile();
+				fileWatcherTimer.Start();
+			}
+			catch (Exception ex) {
+				System.Diagnostics.Debug.WriteLine("fileWatcherTimer_Elapsed Error occurred: " + ex.Message);
+				Start();
+			}
 		}
 		private void logFileWatcher_Changed(object sender, FileSystemEventArgs e) {
-				try {
-					FileInfo info = new FileInfo(CurFilePath);
-					if (fileWatcherTimer_lastWriteTime != info.LastWriteTime || fileWatcherTimer_length != info.Length) {
-						fileWatcherTimer_lastWriteTime = info.LastWriteTime;
-						fileWatcherTimer_length = info.Length;
-						OnContentChanged(this, e);
-						fileWatcherTimer.Start();
-					}
+			try {
+				FileInfo info = new FileInfo(CurFilePath);
+				if (fileWatcherTimer_lastWriteTime != info.LastWriteTime || fileWatcherTimer_length != info.Length) {
+					fileWatcherTimer_lastWriteTime = info.LastWriteTime;
+					fileWatcherTimer_length = info.Length;
+					OnContentChanged(this, e);
+					fileWatcherTimer.Start();
 				}
-				catch (Exception ex) {
-					System.Diagnostics.Debug.WriteLine("logFileWatcher_Changed Error occurred: " + ex.Message);
-				}
+			}
+			catch (Exception ex) {
+				System.Diagnostics.Debug.WriteLine("logFileWatcher_Changed Error occurred: " + ex.Message);
+			}
 		}
 		private void logFileWatcher_Deleted(object sender, FileSystemEventArgs e) {
-				StopFileWatcher();
+			StopFileWatcher();
 		}
 		#endregion filesystem event
 

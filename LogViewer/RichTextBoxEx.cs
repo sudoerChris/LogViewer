@@ -15,6 +15,7 @@ namespace LogViewer {
 		private static extern IntPtr SendMessage(IntPtr hWnd, Int32 wMsg, Int32 wParam, IntPtr lParam);
 		private const int WM_USER = 0x400;
 		private const int WM_SETREDRAW = 0x000B;
+		private const int WM_PAINT = 0x000F;
 		private const int EM_GETEVENTMASK = WM_USER + 59;
 		private const int EM_SETEVENTMASK = WM_USER + 69;
 		#endregion win32 call
@@ -50,13 +51,7 @@ namespace LogViewer {
 			else
 				Select(suspendSelStart, suspendSelLength);
 			SendMessage(Handle, EM_SETEVENTMASK, 0, _EventMask);
-			if (KeepScrollPosAfterWrite) {
-				SetScrollPos(suspendScrollInfoH.nPos, suspendScrollInfoV.nPos);
-			}
-			else {
-				SetScrollPos(suspendScrollInfoH.nPos, GetWin32ScrollInfo(SBOrientation.SB_VERT).nPos);
-			}
-			ResumePainting();
+			ResumePainting(true);
 			writing = false;
 		}
 		private void SuspendPainting() {
@@ -64,10 +59,17 @@ namespace LogViewer {
 			suspended = true;
 			SendMessage(Handle, WM_SETREDRAW, 0, IntPtr.Zero);
 		}
-		private void ResumePainting() {
-			if (!suspended) return;
+		private void ResumePainting(bool endWrite) {
+			if (BuffereDrawing && !endWrite) return;
+			if (KeepScrollPosAfterWrite) {
+				SetScrollPos(suspendScrollInfoH.nPos, suspendScrollInfoV.nPos);
+			}
+			else {
+				SetScrollPos(suspendScrollInfoH.nPos, GetWin32ScrollInfo(SBOrientation.SB_VERT).nPos);
+			}
 			SendMessage(Handle, WM_SETREDRAW, 1, IntPtr.Zero);
 			Invalidate();
+			SendMessage(Handle, WM_PAINT, 0, IntPtr.Zero);
 			suspended = false;
 		}
 		public void RemoveFirst(int count) {
@@ -95,12 +97,13 @@ namespace LogViewer {
 			if (lines.Count == 0) return;
 			BeginWrite();
 			if (TextLength > 0 && !newFirstLine) {
-				Select(TextLength-1, 1);
+				Select(TextLength - 1, 1);
 			}
 			else {
-				Select(TextLength , 0);
+				Select(TextLength, 0);
 			}
 			for (int i = 0; i < lines.Count; i++) {
+				SuspendPainting();
 				if (TextLength + lines[i].Length > 10_000_000) {
 					RemoveFirst(lines[i].Length * (lines.Count - i));
 				}
@@ -112,8 +115,10 @@ namespace LogViewer {
 						if (!m.Success) continue;
 						Select(lineStartIndex + m.Index, m.Length);
 						SelectionBackColor = item.HighlightColor;
+						Select(TextLength, 0);
 					}
 				}
+				ResumePainting(false);
 			}
 			EndWrite();
 		}
@@ -125,13 +130,10 @@ namespace LogViewer {
 			SelectionBackColor = BackColor;
 			EndWrite();
 		}
-
-
 		protected override void OnGotFocus(EventArgs e) {
 			// prevent rescroll to cursor when set focus
 			SetScrollPos(GetWin32ScrollInfo(SBOrientation.SB_HORZ).nPos,GetWin32ScrollInfo(SBOrientation.SB_VERT).nPos);
 		}
-
 		public void FindNext(string str) {
 			if (SelectionStart + SelectionLength >= TextLength) return;
 			Find(str, SelectionStart + SelectionLength, RichTextBoxFinds.None);
@@ -139,7 +141,6 @@ namespace LogViewer {
 		public void FindPrevious(string str) {
 			Find(str, 0, SelectionStart, RichTextBoxFinds.Reverse);
 		}
-
 
 		#region scroll
 		[DllImport("user32.dll")]
@@ -209,7 +210,6 @@ namespace LogViewer {
 			SelectionStart = TextLength;
 			SetScrollPos(hScrollInfo.nPos, GetWin32ScrollInfo(SBOrientation.SB_VERT).nPos);
 		}
-
 		private void SetScrollPos(int x, int y) {
 			Point p = new Point(x, y);
 			SendMessage(Handle, EM_SETSCROLLPOS, 0, ref p);
