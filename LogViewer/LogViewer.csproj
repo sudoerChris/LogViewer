@@ -81,6 +81,7 @@
   <ItemGroup>
     <Compile Include="Config.cs" />
     <Compile Include="LogFileWatcher.cs" />
+    <Compile Include="LogReader.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>

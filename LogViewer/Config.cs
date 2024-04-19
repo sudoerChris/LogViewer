@@ -46,7 +46,7 @@ namespace LogViewer {
 		public bool FilenameIsRegex { get; set; }
 		public string Include { get; set; }
 		public string Exclude { get; set; }
-		public int ReadLastLines { get; set; }
+		public int SizeLimit { get; set; } = 1000;
 		public bool Persistent { get; set; }
 		public bool BufferedDraw { get; set; }
 		public bool AlwaysOnTop { get; set; }

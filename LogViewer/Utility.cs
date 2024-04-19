@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -43,5 +44,17 @@ namespace LogViewer {
 			catch { }
 			return auth;
 		}
+		#region win32 call
+		[DllImport("user32.dll")]
+		public static extern IntPtr SendMessage(IntPtr hWnd, Int32 wMsg, Int32 wParam, ref Point lParam);
+
+		[DllImport("user32.dll")]
+		public static extern IntPtr SendMessage(IntPtr hWnd, Int32 wMsg, Int32 wParam, IntPtr lParam);
+		public const int WM_USER = 0x400;
+		public const int WM_SETREDRAW = 0x000B;
+		public const int WM_PAINT = 0x000F;
+		public const int EM_GETEVENTMASK = WM_USER + 59;
+		public const int EM_SETEVENTMASK = WM_USER + 69;
+		#endregion win32 call
 	}
 }

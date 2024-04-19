@@ -36,11 +36,11 @@ namespace LogViewer
 			this.toggleOptionBtn = new System.Windows.Forms.Button();
 			this.optionPanel = new System.Windows.Forms.Panel();
 			this.wordWrapCb = new System.Windows.Forms.CheckBox();
-			this.mainLogText = new LogViewer.RichTextBoxEx();
+			this.mainLogText = new RichTextBoxEx();
 			this.bufferedDrawCb = new System.Windows.Forms.CheckBox();
 			this.saveBtn = new System.Windows.Forms.Button();
 			this.persistentCb = new System.Windows.Forms.CheckBox();
-			this.readLastLinesInput = new System.Windows.Forms.NumericUpDown();
+			this.sizeLimitInput = new System.Windows.Forms.NumericUpDown();
 			this.addHighlightBtn = new System.Windows.Forms.Label();
 			this.highlightDataGrid = new System.Windows.Forms.DataGridView();
 			this.colorColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -49,7 +49,7 @@ namespace LogViewer
 			this.filenameRegexCb = new System.Windows.Forms.CheckBox();
 			this.excludeTextBox = new System.Windows.Forms.TextBox();
 			this.excludeLabel = new System.Windows.Forms.Label();
-			this.readLastLinesLabel = new System.Windows.Forms.Label();
+			this.sizeLimitLabel = new System.Windows.Forms.Label();
 			this.reloadBtn = new System.Windows.Forms.Button();
 			this.includeTextBox = new System.Windows.Forms.TextBox();
 			this.includeLabel = new System.Windows.Forms.Label();
@@ -69,7 +69,7 @@ namespace LogViewer
 			this.findTextbox = new System.Windows.Forms.TextBox();
 			this.findLabel = new System.Windows.Forms.Label();
 			this.optionPanel.SuspendLayout();
-			((System.ComponentModel.ISupportInitialize)(this.readLastLinesInput)).BeginInit();
+			((System.ComponentModel.ISupportInitialize)(this.sizeLimitInput)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.highlightDataGrid)).BeginInit();
 			this.findPanel.SuspendLayout();
 			this.SuspendLayout();
@@ -100,14 +100,14 @@ namespace LogViewer
 			this.optionPanel.Controls.Add(this.bufferedDrawCb);
 			this.optionPanel.Controls.Add(this.saveBtn);
 			this.optionPanel.Controls.Add(this.persistentCb);
-			this.optionPanel.Controls.Add(this.readLastLinesInput);
+			this.optionPanel.Controls.Add(this.sizeLimitInput);
 			this.optionPanel.Controls.Add(this.addHighlightBtn);
 			this.optionPanel.Controls.Add(this.highlightDataGrid);
 			this.optionPanel.Controls.Add(this.fontBtn);
 			this.optionPanel.Controls.Add(this.filenameRegexCb);
 			this.optionPanel.Controls.Add(this.excludeTextBox);
 			this.optionPanel.Controls.Add(this.excludeLabel);
-			this.optionPanel.Controls.Add(this.readLastLinesLabel);
+			this.optionPanel.Controls.Add(this.sizeLimitLabel);
 			this.optionPanel.Controls.Add(this.reloadBtn);
 			this.optionPanel.Controls.Add(this.includeTextBox);
 			this.optionPanel.Controls.Add(this.includeLabel);
@@ -190,22 +190,23 @@ namespace LogViewer
 			this.persistentCb.Text = "Persistent";
 			this.persistentCb.UseVisualStyleBackColor = true;
 			// 
-			// readLastLinesInput
+			// sizeLimitInput
 			// 
-			this.readLastLinesInput.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+			this.sizeLimitInput.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.readLastLinesInput.BorderStyle = System.Windows.Forms.BorderStyle.None;
-			this.readLastLinesInput.Location = new System.Drawing.Point(432, 88);
-			this.readLastLinesInput.Maximum = new decimal(new int[] {
-            5000,
+			this.sizeLimitInput.BorderStyle = System.Windows.Forms.BorderStyle.None;
+			this.sizeLimitInput.Location = new System.Drawing.Point(432, 88);
+			this.sizeLimitInput.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+			this.sizeLimitInput.Maximum = new decimal(new int[] {
+            50000,
             0,
             0,
             0});
-			this.readLastLinesInput.Name = "readLastLinesInput";
-			this.readLastLinesInput.Size = new System.Drawing.Size(227, 16);
-			this.readLastLinesInput.TabIndex = 7;
-			this.readLastLinesInput.Value = new decimal(new int[] {
-            500,
+			this.sizeLimitInput.Name = "sizeLimitInput";
+			this.sizeLimitInput.Size = new System.Drawing.Size(227, 16);
+			this.sizeLimitInput.TabIndex = 7;
+			this.sizeLimitInput.Value = new decimal(new int[] {
+            1000,
             0,
             0,
             0});
@@ -323,14 +324,14 @@ namespace LogViewer
 			this.excludeLabel.TabIndex = 13;
 			this.excludeLabel.Text = "Exclude:";
 			// 
-			// readLastLinesLabel
+			// sizeLimitLabel
 			// 
-			this.readLastLinesLabel.AutoSize = true;
-			this.readLastLinesLabel.Location = new System.Drawing.Point(339, 87);
-			this.readLastLinesLabel.Name = "readLastLinesLabel";
-			this.readLastLinesLabel.Size = new System.Drawing.Size(87, 13);
-			this.readLastLinesLabel.TabIndex = 11;
-			this.readLastLinesLabel.Text = "Read Last Lines:";
+			this.sizeLimitLabel.AutoSize = true;
+			this.sizeLimitLabel.Location = new System.Drawing.Point(339, 87);
+			this.sizeLimitLabel.Name = "sizeLimitLabel";
+			this.sizeLimitLabel.Size = new System.Drawing.Size(87, 13);
+			this.sizeLimitLabel.TabIndex = 11;
+			this.sizeLimitLabel.Text = "Only Read Last:";
 			// 
 			// reloadBtn
 			// 
@@ -534,7 +535,7 @@ namespace LogViewer
 			this.Text = "LogViewer";
 			this.optionPanel.ResumeLayout(false);
 			this.optionPanel.PerformLayout();
-			((System.ComponentModel.ISupportInitialize)(this.readLastLinesInput)).EndInit();
+			((System.ComponentModel.ISupportInitialize)(this.sizeLimitInput)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.highlightDataGrid)).EndInit();
 			this.findPanel.ResumeLayout(false);
 			this.findPanel.PerformLayout();
@@ -558,7 +559,7 @@ namespace LogViewer
 		private Label highlight;
 		private TextBox excludeTextBox;
 		private Label excludeLabel;
-		private Label readLastLinesLabel;
+		private Label sizeLimitLabel;
 		private Button reloadBtn;
 		private CheckBox filenameRegexCb;
 		private Button fontBtn;
@@ -566,7 +567,7 @@ namespace LogViewer
 		private DataGridView highlightDataGrid;
 		private FontDialog fontDialog1;
 		private ColorDialog colorDialog1;
-		private NumericUpDown readLastLinesInput;
+		private NumericUpDown sizeLimitInput;
 		private Label scrollToBottomBtn;
 		private CheckBox persistentCb;
 		private SaveFileDialog saveFileDialog1;

@@ -10,24 +10,13 @@ using System.Timers;
 namespace LogViewer {
 	internal class LogFileWatcher : ISynchronizeInvoke {
 		#region outgoing event
-		public ISynchronizeInvoke SynchronizingObject = null;
 		public event FileSystemEventHandler ContentChangedHandler;
 		public event FileSystemEventHandler TargetChangedHandler;
 		private void OnContentChanged(object sender, FileSystemEventArgs e) {
-			if (SynchronizingObject != null && SynchronizingObject.InvokeRequired) {
-				SynchronizingObject.BeginInvoke(ContentChangedHandler, new object[] { sender, e });
-			}
-			else {
 				ContentChangedHandler(sender, e);
-			}
 		}
 		private void OnTargetChanged(object sender, FileSystemEventArgs e) {
-			if (SynchronizingObject != null && SynchronizingObject.InvokeRequired) {
-				SynchronizingObject.BeginInvoke(TargetChangedHandler, new object[] { sender, e });
-			}
-			else {
 				TargetChangedHandler(sender, e);
-			}
 		}
 		#endregion outgoing event
 		public string CurFilePath = "";
@@ -326,7 +315,6 @@ namespace LogViewer {
 		private readonly object syncObject = new object();
 		private readonly ManualResetEvent operationPendingEvent = new ManualResetEvent(false);
 		private Queue<AsyncResult> taskQueue = new Queue<AsyncResult>();
-		private object result;
 
 		public bool InvokeRequired => Thread.CurrentThread != workerThread;
 

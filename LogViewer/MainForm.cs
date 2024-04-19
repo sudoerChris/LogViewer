@@ -11,10 +11,10 @@ namespace LogViewer {
 	public partial class MainForm : Form {
 		private readonly ConfigManager configManager = new ConfigManager();
 		private LogFileWatcher watcher;
-		private Regex includeRegex, excludeRegex;
 		private readonly Regex invalidPathChar = new Regex("<|>|:|\"|/|\\\\|\\||\\?|\\*", RegexOptions.Compiled | RegexOptions.Singleline);
 		private readonly Regex invalidNonWildcardPathChar = new Regex("<|>|:|\"|/|\\\\|\\|", RegexOptions.Compiled | RegexOptions.Singleline);
-
+		private LogReader logReader;
+		private List<HighlightItem> highlightItems = new List<HighlightItem>();
 		public MainForm() {
 			Utility.SetDarkMode(Handle, true);
 			InitializeComponent();
@@ -38,6 +38,7 @@ namespace LogViewer {
 			UpdateCondition();
 		}
 		private void InitComponent() {
+			logReader = new LogReader(mainLogText);
 			includeTextBox.LostFocus += (s, e) => { UpdateIncludeRegex(); };
 			excludeTextBox.LostFocus += (s, e) => { UpdateExcludeRegex(); };
 			fontDialog1.Apply += FontDialog1_Apply;
@@ -60,15 +61,15 @@ namespace LogViewer {
 			watcher = new LogFileWatcher();
 			watcher.TargetChangedHandler += Watcher_TargetChanged;
 			watcher.ContentChangedHandler += (s, e) => { UpdateFileContent(); };
-			watcher.SynchronizingObject = this;
 			mainLogText.KeyUp += mainLogText_KeyUp;
 			findTextbox.KeyUp += findTextbox_KeyUp;
 			alwaysOnTopCb.CheckedChanged += (s, e) => { TopMost = alwaysOnTopCb.Checked; };
 			scrollToBottomBtn.Click += (s, e) => { mainLogText.ScrollToBottom(); };
-			clearBtn.Click += (s, e) => { mainLogText.Text = null; };
+			clearBtn.Click += (s, e) => { mainLogText.Clear(); };
 			wordWrapCb.CheckedChanged += (s, e) => { mainLogText.WordWrap = wordWrapCb.Checked; };
 			saveBtn.Click += (s, e) => { SaveConfig(); };
-			bufferedDrawCb.CheckedChanged += (s, e) => { mainLogText.BuffereDrawing = bufferedDrawCb.Checked; };
+			bufferedDrawCb.CheckedChanged += (s, e) => { logReader.EnqueueMsg(LogReader.MessageID.SetBufferedPrinting, bufferedDrawCb.Checked); };
+			sizeLimitInput.LostFocus += (s, e) => { logReader.EnqueueMsg(LogReader.MessageID.UpdateSizeLimit, (int)sizeLimitInput.Value); };
 #if DEBUG
 			testBtn.Visible = true;
 #endif
@@ -79,7 +80,7 @@ namespace LogViewer {
 			configManager.config.FilenameIsRegex = filenameRegexCb.Checked;
 			configManager.config.Include = includeTextBox.Text;
 			configManager.config.Exclude = excludeTextBox.Text;
-			configManager.config.ReadLastLines = (int)readLastLinesInput.Value;
+			configManager.config.SizeLimit = (int)sizeLimitInput.Value;
 			configManager.config.Persistent = persistentCb.Checked;
 			configManager.config.BufferedDraw = bufferedDrawCb.Checked;
 			configManager.config.WordWrap = wordWrapCb.Checked;
@@ -87,7 +88,7 @@ namespace LogViewer {
 			configManager.config.FontFamilyName = mainLogText.Font.FontFamily.Name;
 			configManager.config.FontSize = mainLogText.Font.Size;
 			configManager.config.FontStyle = (int)mainLogText.Font.Style;
-			configManager.config.HighlightItems = new List<HighlightItem>(mainLogText.highlightItems);
+			configManager.config.HighlightItems = new List<HighlightItem>(highlightItems);
 			configManager.config.X = Location.X;
 			configManager.config.Y = Location.Y;
 			configManager.config.W = Size.Width;
@@ -117,16 +118,18 @@ namespace LogViewer {
 			filenameRegexCb.Checked = configManager.config.FilenameIsRegex;
 			includeTextBox.Text = configManager.config.Include;
 			excludeTextBox.Text = configManager.config.Exclude;
-			readLastLinesInput.Value = configManager.config.ReadLastLines;
+			sizeLimitInput.Value = configManager.config.SizeLimit;
+			logReader.EnqueueMsg(LogReader.MessageID.UpdateSizeLimit, configManager.config.SizeLimit);
 			persistentCb.Checked = configManager.config.Persistent;
 			wordWrapCb.Checked = configManager.config.WordWrap;
 			bufferedDrawCb.Checked = configManager.config.BufferedDraw;
 			alwaysOnTopCb.Checked = configManager.config.AlwaysOnTop;
 			SetFont(new Font(configManager.config.FontFamilyName, configManager.config.FontSize, (FontStyle)configManager.config.FontStyle));
-			mainLogText.highlightItems = new List<HighlightItem>(configManager.config.HighlightItems);
+			highlightItems = new List<HighlightItem>(configManager.config.HighlightItems);
+			logReader.EnqueueMsg(LogReader.MessageID.UpdateHighlighter, highlightItems);
 			SetGeometry(configManager.config.X, configManager.config.Y, configManager.config.W, configManager.config.H);
 			highlightDataGrid.Rows.Clear();
-			foreach (HighlightItem item in mainLogText.highlightItems) {
+			foreach (HighlightItem item in highlightItems) {
 				highlightDataGrid.Rows.Add(GetNewRow(item.PatternRegex.ToString(), item.HighlightColor));
 			}
 			return true;
@@ -162,61 +165,16 @@ namespace LogViewer {
 
 		#region print log file
 		private void Watcher_TargetChanged(object sender, FileSystemEventArgs e) {
-			lastFileSize = 0;
-			if (!persistentCb.Checked) mainLogText.Text = null;
-			mainLogText.WriteLine($"Monitor Changed: {watcher.CurFileName}");
-			this.Text = $"LogViewer: {watcher.CurFileName}";
-			UpdateFileContent();
+			logReader.EnqueueMsg(LogReader.MessageID.UpdateTargetFile, new LogReader.UpdateTargetFileMsg { path = watcher.CurFilePath, clearTBContent = !persistentCb.Checked });
+			Invoke(new Action(() => {
+				Text = $"LogViewer: {watcher.CurFileName}";
+			}));
 		}
 		private void UpdateCondition() {
 			watcher.SetCondition(folderTextBox.Text, filenameTextbox.Text, filenameRegexCb.Checked);
 		}
-		private long lastFileSize = 0;
 		private void UpdateFileContent() {
-			string fullpath = watcher.CurFilePath;
-			int lineLimit = readLastLinesInput.Text.Length > 0 ? (int)readLastLinesInput.Value : 5000;
-			try {
-				FileInfo file = new FileInfo(fullpath);
-				if (file.Length > lastFileSize) {
-					using (FileStream fileStream = new FileStream(fullpath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-						List<string> lines = new List<string>();
-						bool prevLineEnded = false;
-						using (StreamReader streamReader = new StreamReader(fileStream)) {
-							// check prev line ended
-							if (lastFileSize > 0) {
-								streamReader.BaseStream.Seek(lastFileSize - 1, SeekOrigin.Begin);
-								prevLineEnded = streamReader.Read() == '\n';
-							}
-							else {
-								prevLineEnded = true;
-							}
-							// read new content
-							string line;
-							while ((line = streamReader.ReadLine()) != null) {
-								// filter line
-								if (includeRegex != null) {
-									if (!includeRegex.IsMatch(line)) continue;
-								}
-								if (excludeRegex != null) {
-									if (excludeRegex.IsMatch(line)) continue;
-								}
-								lines.Add(line);
-								// maintain line limit
-								if (lines.Count > lineLimit) {
-									lines.RemoveAt(0);
-								}
-							}
-						}
-						DisableControl();
-						mainLogText.WriteLines(ref lines, prevLineEnded);
-						EnableControl();
-					}
-				}
-				lastFileSize = file.Length;
-			}
-			catch (Exception ex) {
-				mainLogText.WriteLine(ex.Message, Color.Red);
-			}
+			logReader.EnqueueMsg(LogReader.MessageID.LoadFile);
 		}
 
 		#endregion print log file
@@ -262,14 +220,15 @@ namespace LogViewer {
 			if (unusedBackColor.Count == 0) {
 				unusedBackColor.Add(defaultHighlightBackColors.First());
 			}
-			mainLogText.highlightItems.Add(new HighlightItem() { HighlightColor = unusedBackColor.First() });
+			highlightItems.Add(new HighlightItem() { HighlightColor = unusedBackColor.First() });
 			int newRow = highlightDataGrid.Rows.Add(GetNewRow("", unusedBackColor.First()));
 			highlightDataGrid.CurrentCell = highlightDataGrid.Rows[newRow].Cells[1];
 			highlightDataGrid.BeginEdit(false);
 		}
 		private void highlightDataGrid_CellValueChanged(object sender, DataGridViewCellEventArgs e) {
-			if (mainLogText.highlightItems[highlightDataGrid.CurrentCell.RowIndex].SetPatternRegex((string)highlightDataGrid.CurrentCell.Value)) {
+			if (highlightItems[highlightDataGrid.CurrentCell.RowIndex].SetPatternRegex((string)highlightDataGrid.CurrentCell.Value)) {
 				highlightDataGrid.CurrentCell.Style.BackColor = highlightDataGrid.CurrentRow.Cells[0].Style.BackColor;
+				logReader.EnqueueMsg(LogReader.MessageID.UpdateHighlighter, highlightItems);
 			}
 			else {
 				highlightDataGrid.CurrentCell.Style.BackColor = Color.Red;
@@ -313,10 +272,10 @@ namespace LogViewer {
 
 		private void highlightDataGrid_CellDoubleClick(object sender, DataGridViewCellEventArgs e) {
 			if (e.ColumnIndex == 0) {
-				colorDialog1.Color = mainLogText.highlightItems[e.RowIndex].HighlightColor;
+				colorDialog1.Color = highlightItems[e.RowIndex].HighlightColor;
 				DialogResult result = colorDialog1.ShowDialog();
 				if (result == DialogResult.OK) {
-					mainLogText.highlightItems[e.RowIndex].HighlightColor = colorDialog1.Color;
+					highlightItems[e.RowIndex].HighlightColor = colorDialog1.Color;
 					foreach (DataGridViewCell cell in highlightDataGrid.Rows[e.RowIndex].Cells) {
 						cell.Style.BackColor = colorDialog1.Color;
 					}
@@ -335,7 +294,8 @@ namespace LogViewer {
 			}
 			foreach (int rowIndex in selectedRows.Reverse()) {
 				highlightDataGrid.Rows.RemoveAt(rowIndex);
-				mainLogText.highlightItems.RemoveAt(rowIndex);
+				highlightItems.RemoveAt(rowIndex);
+				logReader.EnqueueMsg(LogReader.MessageID.UpdateHighlighter, highlightItems);
 			}
 		}
 		#endregion highlight
@@ -377,11 +337,9 @@ namespace LogViewer {
 		private void filenameRegexCb_CheckedChanged(object sender, EventArgs e) {
 			checkFilename();
 		}
-
 		private void filenameTextbox_TextChanged(object sender, EventArgs e) {
 			checkFilename();
 		}
-
 		private void folderTextBox_TextChanged(object sender, EventArgs e) {
 			if (folderTextBox.Text.StartsWith(@"\")) return; // skip checking for share folderPath while typing
 			checkFolder();
@@ -409,25 +367,28 @@ namespace LogViewer {
 		#region line filtering
 		private void UpdateIncludeRegex() {
 			if (includeTextBox.Text.Length == 0) {
-				includeRegex = null;
+				logReader.EnqueueMsg(LogReader.MessageID.UpdateIncludeRegex, null);
 			}
 			try {
-				includeRegex = new Regex(includeTextBox.Text, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+				// test regex first
+				new Regex(includeTextBox.Text, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+				logReader.EnqueueMsg(LogReader.MessageID.UpdateIncludeRegex, includeTextBox.Text);
 			}
 			catch {
-				System.Diagnostics.Debug.WriteLine("UpdateIncludeRegex error occur");
+				Debug.WriteLine("UpdateIncludeRegex error occur");
 			}
 		}
 		private void UpdateExcludeRegex() {
 			if (excludeTextBox.Text.Length == 0) {
-				excludeRegex = null;
-				return;
+				logReader.EnqueueMsg(LogReader.MessageID.UpdateExcludeRegex, null);
 			}
 			try {
-				excludeRegex = new Regex(excludeTextBox.Text, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+				// test regex first
+				new Regex(excludeTextBox.Text, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+				logReader.EnqueueMsg(LogReader.MessageID.UpdateExcludeRegex, excludeTextBox.Text);
 			}
 			catch {
-				System.Diagnostics.Debug.WriteLine("UpdateIncludeRegex error occur");
+				Debug.WriteLine("UpdateExcludeRegex error occur");
 			}
 		}
 		private void includeTextBox_TextChanged(object sender, EventArgs e) {
@@ -453,21 +414,12 @@ namespace LogViewer {
 		#endregion line filtering
 
 		#region UI event
-		private void EnableControl() {
-			scrollToBottomBtn.Enabled = true;
-			clearBtn.Enabled = true;
-		}
-		private void DisableControl() {
-			scrollToBottomBtn.Enabled = false;
-			clearBtn.Enabled = false;
-		}
 		private void toggleOptionPanelBtn_Click(object sender, EventArgs e) {
 			optionPanel.Visible = !optionPanel.Visible;
 			toggleOptionBtn.Text = optionPanel.Visible ? "-" : "+";
 		}
 		private void reloadBtn_Click(object sender, EventArgs e) {
-			mainLogText.Text = null;
-			lastFileSize = 0;
+			logReader.EnqueueMsg(LogReader.MessageID.UpdateTargetFile, new LogReader.UpdateTargetFileMsg { path = watcher.CurFilePath, clearTBContent = true });
 			watcher.Restart();
 		}
 		private void mainLogText_KeyUp(object sender, KeyEventArgs e) {
