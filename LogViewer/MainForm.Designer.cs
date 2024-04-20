@@ -68,6 +68,7 @@ namespace LogViewer
 			this.findPanel = new System.Windows.Forms.Panel();
 			this.findTextbox = new System.Windows.Forms.TextBox();
 			this.findLabel = new System.Windows.Forms.Label();
+			this.sizeLimitUnitLabel = new System.Windows.Forms.Label();
 			this.optionPanel.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.sizeLimitInput)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.highlightDataGrid)).BeginInit();
@@ -96,6 +97,7 @@ namespace LogViewer
 			// optionPanel
 			// 
 			this.optionPanel.BackColor = System.Drawing.Color.DarkGray;
+			this.optionPanel.Controls.Add(this.sizeLimitUnitLabel);
 			this.optionPanel.Controls.Add(this.wordWrapCb);
 			this.optionPanel.Controls.Add(this.bufferedDrawCb);
 			this.optionPanel.Controls.Add(this.saveBtn);
@@ -183,7 +185,7 @@ namespace LogViewer
 			// 
 			this.persistentCb.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.persistentCb.AutoSize = true;
-			this.persistentCb.Location = new System.Drawing.Point(665, 86);
+			this.persistentCb.Location = new System.Drawing.Point(661, 86);
 			this.persistentCb.Name = "persistentCb";
 			this.persistentCb.Size = new System.Drawing.Size(72, 17);
 			this.persistentCb.TabIndex = 8;
@@ -195,15 +197,19 @@ namespace LogViewer
 			this.sizeLimitInput.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.sizeLimitInput.BorderStyle = System.Windows.Forms.BorderStyle.None;
-			this.sizeLimitInput.Location = new System.Drawing.Point(432, 88);
-			this.sizeLimitInput.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+			this.sizeLimitInput.Location = new System.Drawing.Point(428, 88);
 			this.sizeLimitInput.Maximum = new decimal(new int[] {
             50000,
             0,
             0,
             0});
+			this.sizeLimitInput.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
 			this.sizeLimitInput.Name = "sizeLimitInput";
-			this.sizeLimitInput.Size = new System.Drawing.Size(227, 16);
+			this.sizeLimitInput.Size = new System.Drawing.Size(203, 16);
 			this.sizeLimitInput.TabIndex = 7;
 			this.sizeLimitInput.Value = new decimal(new int[] {
             1000,
@@ -329,7 +335,7 @@ namespace LogViewer
 			this.sizeLimitLabel.AutoSize = true;
 			this.sizeLimitLabel.Location = new System.Drawing.Point(339, 87);
 			this.sizeLimitLabel.Name = "sizeLimitLabel";
-			this.sizeLimitLabel.Size = new System.Drawing.Size(87, 13);
+			this.sizeLimitLabel.Size = new System.Drawing.Size(83, 13);
 			this.sizeLimitLabel.TabIndex = 11;
 			this.sizeLimitLabel.Text = "Only Read Last:";
 			// 
@@ -513,6 +519,17 @@ namespace LogViewer
 			this.findLabel.TabIndex = 14;
 			this.findLabel.Text = "Find:";
 			// 
+			// sizeLimitUnitLabel
+			// 
+			this.sizeLimitUnitLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.sizeLimitUnitLabel.AutoSize = true;
+			this.sizeLimitUnitLabel.Location = new System.Drawing.Point(634, 87);
+			this.sizeLimitUnitLabel.Margin = new System.Windows.Forms.Padding(0);
+			this.sizeLimitUnitLabel.Name = "sizeLimitUnitLabel";
+			this.sizeLimitUnitLabel.Size = new System.Drawing.Size(21, 13);
+			this.sizeLimitUnitLabel.TabIndex = 17;
+			this.sizeLimitUnitLabel.Text = "KB";
+			// 
 			// MainForm
 			// 
 			this.AllowDrop = true;
@@ -581,6 +598,7 @@ namespace LogViewer
 		private Panel findPanel;
 		private TextBox findTextbox;
 		private Label findLabel;
+		private Label sizeLimitUnitLabel;
 	}
 }
 

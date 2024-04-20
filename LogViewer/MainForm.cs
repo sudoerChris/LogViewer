@@ -6,9 +6,11 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace LogViewer {
 	public partial class MainForm : Form {
+		Version appVersion = Assembly.GetExecutingAssembly().GetName().Version;
 		private readonly ConfigManager configManager = new ConfigManager();
 		private LogFileWatcher watcher;
 		private readonly Regex invalidPathChar = new Regex("<|>|:|\"|/|\\\\|\\||\\?|\\*", RegexOptions.Compiled | RegexOptions.Singleline);
@@ -38,6 +40,7 @@ namespace LogViewer {
 			UpdateCondition();
 		}
 		private void InitComponent() {
+			Text = $"LogViewer {appVersion.Major}.{appVersion.Minor}.{appVersion.Build}";
 			logReader = new LogReader(mainLogText);
 			includeTextBox.LostFocus += (s, e) => { UpdateIncludeRegex(); };
 			excludeTextBox.LostFocus += (s, e) => { UpdateExcludeRegex(); };
@@ -167,7 +170,7 @@ namespace LogViewer {
 		private void Watcher_TargetChanged(object sender, FileSystemEventArgs e) {
 			logReader.EnqueueMsg(LogReader.MessageID.UpdateTargetFile, new LogReader.UpdateTargetFileMsg { path = watcher.CurFilePath, clearTBContent = !persistentCb.Checked });
 			Invoke(new Action(() => {
-				Text = $"LogViewer: {watcher.CurFileName}";
+				Text = $"LogViewer {appVersion.Major}.{appVersion.Minor}.{appVersion.Build}: {watcher.CurFileName}";
 			}));
 		}
 		private void UpdateCondition() {
