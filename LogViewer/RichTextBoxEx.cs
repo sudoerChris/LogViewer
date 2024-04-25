@@ -12,6 +12,9 @@ internal class RichTextBoxEx : RichTextBox {
 	private int suspendSelStart = 0;
 	private int suspendSelLength = 0;
 	private bool KeepScrollPosAfterWrite = false;
+	public RichTextBoxEx(){
+		DetectUrls = false;
+	}
 	public void BeginWrite() {
 		if (writing) return;
 		writing = true;
@@ -20,12 +23,11 @@ internal class RichTextBoxEx : RichTextBox {
 		suspendSelStart = SelectionStart != TextLength ? SelectionStart : -1;
 		suspendSelLength = SelectionLength;
 		suspendScrollInfoH = GetWin32ScrollInfo(SBOrientation.SB_HORZ);
+		int pos = GetCharIndexFromPosition(new Point(0,0));
 		if (KeepScrollPosAfterWrite) {
 			suspendScrollInfoV = GetWin32ScrollInfo(SBOrientation.SB_VERT);
 		}
-		if (KeepScrollPosAfterWrite) {
-			SuspendPainting();
-		}
+		SuspendPainting();
 	}
 	public void EndWrite() {
 		if (!writing) return;
@@ -56,16 +58,19 @@ internal class RichTextBoxEx : RichTextBox {
 	}
 	public void RemoveFirst(int count) {
 		// store and shift selection index
-		int selStart = (suspended ? suspendSelStart : SelectionStart) - count;
-		int curSelLength = SelectionLength;
+		int selStart = (suspended ? suspendSelStart : SelectionStart) - count + 1;
+		int curSelLength = (suspended ? suspendSelLength : SelectionLength);
 		if (selStart < 0) {
 			selStart = 0;
 			curSelLength = 0;
 		}
+		if(suspendSelStart == -1){
+			selStart = -1;
+		}
 		int topLeftCharIndex = GetCharIndexFromPosition(new Point(0, 0)) - count;
 		topLeftCharIndex = Math.Max(0, topLeftCharIndex);
 		Select(0, count);
-		SelectedText = "";
+		SelectedText = " "; // empty string doesn't work, thx MS!
 		// apply new selection index
 		if (suspended) {
 			suspendSelStart = selStart;
@@ -85,7 +90,7 @@ internal class RichTextBoxEx : RichTextBox {
 		}
 		SelectedRtf = rtf;
 		if (TextLength > 10_000_000) {
-			RemoveFirst(TextLength - 10_000_000);
+			RemoveFirst(TextLength - 9_000_000);
 		}
 		EndWrite();
 	}

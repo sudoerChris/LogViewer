@@ -73,6 +73,7 @@ namespace LogViewer {
 			saveBtn.Click += (s, e) => { SaveConfig(); };
 			bufferedDrawCb.CheckedChanged += (s, e) => { logReader.EnqueueMsg(LogReader.MessageID.SetBufferedPrinting, bufferedDrawCb.Checked); };
 			sizeLimitInput.LostFocus += (s, e) => { logReader.EnqueueMsg(LogReader.MessageID.UpdateSizeLimit, (int)sizeLimitInput.Value); };
+			Utility.UnsubscribeInvalidSystemEvents();
 #if DEBUG
 			testBtn.Visible = true;
 #endif

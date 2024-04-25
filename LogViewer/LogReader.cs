@@ -18,8 +18,10 @@ class LogReader {
 			rtfBuilder.ForeColor = targetTB.ForeColor;
 			rtfBuilder.ReadOnly = true;
 			rtfBuilder.Visible = false;
+			rtfBuilder.DetectUrls = false;
 			Utility.SendMessage(rtfBuilder.Handle, Utility.WM_SETREDRAW, 0, IntPtr.Zero);
 			Utility.SendMessage(rtfBuilder.Handle, Utility.EM_SETEVENTMASK, 0, IntPtr.Zero);
+			Utility.UnsubscribeInvalidSystemEvents();
 			while (true) {
 				if (msgQueue.Count == 0) {
 					msgQueueEvent.Wait();
