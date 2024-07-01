@@ -36,7 +36,7 @@ namespace LogViewer
 			this.toggleOptionBtn = new System.Windows.Forms.Button();
 			this.optionPanel = new System.Windows.Forms.Panel();
 			this.wordWrapCb = new System.Windows.Forms.CheckBox();
-			this.mainLogText = new RichTextBoxEx();
+			this.mainLogText = new LogTextBox();
 			this.bufferedDrawCb = new System.Windows.Forms.CheckBox();
 			this.saveBtn = new System.Windows.Forms.Button();
 			this.persistentCb = new System.Windows.Forms.CheckBox();
@@ -141,19 +141,16 @@ namespace LogViewer
 			// 
 			// mainLogText
 			// 
-			this.mainLogText.BackColor = System.Drawing.Color.Black;
+			this.mainLogText.BackColor = System.Drawing.Color.Gray;
 			this.mainLogText.BorderStyle = System.Windows.Forms.BorderStyle.None;
 			this.mainLogText.CausesValidation = false;
-			this.mainLogText.DetectUrls = false;
 			this.mainLogText.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.mainLogText.Font = new System.Drawing.Font("Consolas", 9F);
 			this.mainLogText.ForeColor = System.Drawing.Color.White;
-			this.mainLogText.HideSelection = false;
 			this.mainLogText.Location = new System.Drawing.Point(0, 0);
 			this.mainLogText.Margin = new System.Windows.Forms.Padding(0);
 			this.mainLogText.Name = "mainLogText";
-			this.mainLogText.ReadOnly = true;
-			this.mainLogText.Size = new System.Drawing.Size(998, 392);
+			this.mainLogText.Size = this.ClientSize;
 			this.mainLogText.TabIndex = 0;
 			this.mainLogText.Text = "";
 			// 
@@ -563,7 +560,7 @@ namespace LogViewer
 
 #endregion
 
-		private RichTextBoxEx mainLogText;
+		private LogTextBox mainLogText;
 		private Button toggleOptionBtn;
 		private Panel optionPanel;
 		private Label folderLabel;

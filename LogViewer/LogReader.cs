@@ -9,9 +9,9 @@ using System.Windows.Forms;
 
 using LogViewer;
 class LogReader {
-	private RichTextBoxEx targetTB;
+	private LogTextBox targetTB;
 	private ManualResetEventSlim msgQueueEvent = new ManualResetEventSlim(false);
-	public LogReader(RichTextBoxEx target) {
+	public LogReader(LogTextBox target) {
 		targetTB = target;
 		Thread t = new Thread(() => {
 			rtfBuilder = new RichTextBox();

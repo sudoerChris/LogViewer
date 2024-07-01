@@ -7,11 +7,11 @@ using LogViewer;
 internal class RichTextBoxEx : RichTextBox {
 	private SCROLLINFO suspendScrollInfoH, suspendScrollInfoV;
 	private bool writing = false;
-	private bool suspended = false;
+	private bool paintingStopped = false;
 	private IntPtr _EventMask;
 	private int suspendSelStart = 0;
 	private int suspendSelLength = 0;
-	private bool KeepScrollPosAfterWrite = false;
+	public bool KeepScrollPosAfterWrite { get; private set; } = false;
 	public RichTextBoxEx(){
 		DetectUrls = false;
 	}
@@ -27,7 +27,7 @@ internal class RichTextBoxEx : RichTextBox {
 		if (KeepScrollPosAfterWrite) {
 			suspendScrollInfoV = GetWin32ScrollInfo(SBOrientation.SB_VERT);
 		}
-		SuspendPainting();
+		StopPainting();
 	}
 	public void EndWrite() {
 		if (!writing) return;
@@ -39,12 +39,13 @@ internal class RichTextBoxEx : RichTextBox {
 		ResumePainting();
 		writing = false;
 	}
-	private void SuspendPainting() {
-		if (suspended) return;
-		suspended = true;
+	private void StopPainting() {
+		if (paintingStopped) return;
+		paintingStopped = true;
 		Utility.SendMessage(Handle, Utility.WM_SETREDRAW, 0, IntPtr.Zero);
 	}
 	private void ResumePainting() {
+		if (!Visible) return;
 		if (KeepScrollPosAfterWrite) {
 			SetScrollPos(suspendScrollInfoH.nPos, suspendScrollInfoV.nPos);
 		}
@@ -54,12 +55,16 @@ internal class RichTextBoxEx : RichTextBox {
 		Utility.SendMessage(Handle, Utility.WM_SETREDRAW, 1, IntPtr.Zero);
 		Invalidate();
 		Utility.SendMessage(Handle, Utility.WM_PAINT, 0, IntPtr.Zero);
-		suspended = false;
+		paintingStopped = false;
 	}
 	public void RemoveFirst(int count) {
 		// store and shift selection index
-		int selStart = (suspended ? suspendSelStart : SelectionStart) - count + 1;
-		int curSelLength = (suspended ? suspendSelLength : SelectionLength);
+		int vertScrollMax = 0;
+		if (KeepScrollPosAfterWrite) {
+			vertScrollMax = GetWin32ScrollInfo(SBOrientation.SB_VERT).nMax;
+		}
+		int selStart = (paintingStopped ? suspendSelStart : SelectionStart) - count + 1;
+		int curSelLength = (paintingStopped ? suspendSelLength : SelectionLength);
 		if (selStart < 0) {
 			selStart = 0;
 			curSelLength = 0;
@@ -71,8 +76,11 @@ internal class RichTextBoxEx : RichTextBox {
 		topLeftCharIndex = Math.Max(0, topLeftCharIndex);
 		Select(0, count);
 		SelectedText = " "; // empty string doesn't work, thx MS!
+		if (KeepScrollPosAfterWrite) {
+			suspendScrollInfoV.nPos -= vertScrollMax - GetWin32ScrollInfo(SBOrientation.SB_VERT).nMax;
+		}
 		// apply new selection index
-		if (suspended) {
+		if (paintingStopped) {
 			suspendSelStart = selStart;
 			suspendSelLength = curSelLength;
 		}
@@ -89,8 +97,8 @@ internal class RichTextBoxEx : RichTextBox {
 			Select(TextLength, 0);
 		}
 		SelectedRtf = rtf;
-		if (TextLength > 10_000_000) {
-			RemoveFirst(TextLength - 9_000_000);
+		if (TextLength > 1_000_000) {
+			RemoveFirst(TextLength - 900_000);
 		}
 		EndWrite();
 	}
@@ -177,7 +185,7 @@ internal class RichTextBoxEx : RichTextBox {
 		}
 	}
 	public void ScrollToBottom() {
-		if (suspended) return;
+		if (paintingStopped) return;
 		SCROLLINFO hScrollInfo = GetWin32ScrollInfo(SBOrientation.SB_HORZ);
 		SelectionStart = TextLength;
 		SetScrollPos(hScrollInfo.nPos, GetWin32ScrollInfo(SBOrientation.SB_VERT).nPos);
