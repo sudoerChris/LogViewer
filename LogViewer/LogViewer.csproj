@@ -81,7 +81,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
-    <Compile Include="LogFileWatcher.cs" />
+    <Compile Include="FileWatcherEx.cs" />
     <Compile Include="LogReader.cs" />
     <Compile Include="LogTextBox.cs">
       <SubType>UserControl</SubType>

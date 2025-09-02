@@ -12,7 +12,7 @@ namespace LogViewer {
 	public partial class MainForm : Form {
 		Version appVersion = Assembly.GetExecutingAssembly().GetName().Version;
 		private readonly ConfigManager configManager = new ConfigManager();
-		private LogFileWatcher watcher;
+		private FileWatcherEx watcher;
 		private readonly Regex invalidPathChar = new Regex("<|>|:|\"|/|\\\\|\\||\\?|\\*", RegexOptions.Compiled | RegexOptions.Singleline);
 		private readonly Regex invalidNonWildcardPathChar = new Regex("<|>|:|\"|/|\\\\|\\|", RegexOptions.Compiled | RegexOptions.Singleline);
 		private LogReader logReader;
@@ -61,7 +61,7 @@ namespace LogViewer {
 			saveFileDialog1.DefaultExt = "LogViewerConfig";
 			saveFileDialog1.Title = "Save Config";
 			saveFileDialog1.Filter = "Config (*.LogViewerConfig)|*.LogViewerConfig";
-			watcher = new LogFileWatcher();
+			watcher = new FileWatcherEx();
 			watcher.TargetChangedHandler += Watcher_TargetChanged;
 			watcher.ContentChangedHandler += (s, e) => { UpdateFileContent(); };
 			mainLogText.KeyUp += mainLogText_KeyUp;
@@ -169,13 +169,14 @@ namespace LogViewer {
 
 		#region print log file
 		private void Watcher_TargetChanged(object sender, FileSystemEventArgs e) {
-			logReader.EnqueueMsg(LogReader.MessageID.UpdateTargetFile, new LogReader.UpdateTargetFileMsg { path = watcher.CurFilePath, clearTBContent = !persistentCb.Checked });
+			logReader.EnqueueMsg(LogReader.MessageID.UpdateTargetFile, new LogReader.UpdateTargetFileMsg { path = e.FullPath, clearTBContent = !persistentCb.Checked });
 			Invoke(new Action(() => {
-				Text = $"LogViewer {appVersion.Major}.{appVersion.Minor}.{appVersion.Build}: {watcher.CurFileName}";
+				Text = $"LogViewer {appVersion.Major}.{appVersion.Minor}.{appVersion.Build}: {e.Name}";
 			}));
 		}
 		private void UpdateCondition() {
-			watcher.SetCondition(folderTextBox.Text, filenameTextbox.Text, filenameRegexCb.Checked);
+			watcher.SetCondition(folderTextBox.Text, filenameRegexCb.Checked ? null : filenameTextbox.Text, filenameRegexCb.Checked ? filenameTextbox.Text : null);
+			watcher.Restart();
 		}
 		private void UpdateFileContent() {
 			logReader.EnqueueMsg(LogReader.MessageID.LoadFile);
@@ -345,7 +346,7 @@ namespace LogViewer {
 			checkFilename();
 		}
 		private void folderTextBox_TextChanged(object sender, EventArgs e) {
-			if (folderTextBox.Text.StartsWith(@"\")) return; // skip checking for share folderPath while typing
+			if (folderTextBox.Text.StartsWith(@"\")) return; // skip checking for share FolderPath while typing
 			checkFolder();
 		}
 		#endregion path

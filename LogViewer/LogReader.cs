@@ -108,7 +108,7 @@ class LogReader {
 				}
 			}
 			catch (Exception ex) {
-				Debug.WriteLine($"ProcessMsg {msgEntry.Key} exception: {ex.Message}");
+				Debug.WriteLine($"ProcessMsg {msgEntry.Key} Exception: {ex.Message}");
 			}
 		}
 	}
