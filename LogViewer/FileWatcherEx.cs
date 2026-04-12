@@ -177,8 +177,8 @@ namespace LogViewer {
 			internal Exception Exception = null;
 			internal bool Synchronous = false;
 			public bool IsCompleted { get; private set; } = false;
-			private ManualResetEvent ResetEvent = new ManualResetEvent(initialState: false);
-			private object InvokeSyncObject = new object();
+			private readonly ManualResetEvent ResetEvent = new ManualResetEvent(initialState: false);
+			private readonly object InvokeSyncObject = new object();
 			public object AsyncState => null;
 
 			public WaitHandle AsyncWaitHandle {
@@ -234,9 +234,9 @@ namespace LogViewer {
 			private enum State { Stopped, Waiting, Monitoring }
 			private State CurState = State.Stopped;
 			private readonly FileWatcherEx Parent;
-			private FileSystemWatcher FSWatcher;
-			private System.Timers.Timer WaitTimer; // wait for the folder to appear, or remote system is back online
-			private System.Timers.Timer PingTimer; // ping the folder periodically because FileSystemWatcher is not reliable in SMB
+			private readonly FileSystemWatcher FSWatcher;
+			private readonly System.Timers.Timer WaitTimer; // wait for the folder to appear, or remote system is back online
+			private readonly System.Timers.Timer PingTimer; // ping the folder periodically because FileSystemWatcher is not reliable in SMB
 			private string LastChangedFilePath = null;
 			public SingleFolderWatcher(FileWatcherEx parent) {
 				Parent = parent;
@@ -244,14 +244,13 @@ namespace LogViewer {
 				FSWatcher.BeginInit();
 				FSWatcher.EnableRaisingEvents = false;
 				FSWatcher.NotifyFilter = NotifyFilters.DirectoryName | NotifyFilters.FileName | NotifyFilters.CreationTime | NotifyFilters.LastWrite;
-				FSWatcher.SynchronizingObject = parent;
 				FSWatcher.Changed += FSWatcherOnChanged;
 				FSWatcher.Created += FSWatcherOnChanged;
 				FSWatcher.Deleted += FSWatcherOnDeleted;
 				FSWatcher.EndInit();
-				WaitTimer = new System.Timers.Timer(1000) { AutoReset = false, Enabled = false, SynchronizingObject = parent };
+				WaitTimer = new System.Timers.Timer(1000) { AutoReset = false, Enabled = false};
 				WaitTimer.Elapsed += OnWaitTimerElapsed;
-				PingTimer = new System.Timers.Timer(1000) { AutoReset = false, Enabled = false, SynchronizingObject = parent };
+				PingTimer = new System.Timers.Timer(1000) { AutoReset = false, Enabled = false};
 				PingTimer.Elapsed += OnPingTimerElapsed;
 			}
 
@@ -260,8 +259,6 @@ namespace LogViewer {
 				FolderPath = folderPath;
 				FileNameFilter = fileNameFilter;
 				FileNameRegex = fileNameRegex;
-				FSWatcher.Path = FolderPath;
-				FSWatcher.Filter = FileNameFilter;
 			}
 
 			public void Start() {
@@ -286,6 +283,8 @@ namespace LogViewer {
 				if (CurState == State.Monitoring) return;
 				CurState = State.Monitoring;
 				WaitTimer.Stop();
+				FSWatcher.Path = FolderPath;
+				FSWatcher.Filter = FileNameFilter;
 				FSWatcher.EnableRaisingEvents = true;
 				PingTimer.Start();
 			}
@@ -354,9 +353,9 @@ namespace LogViewer {
 			private enum State { Stopped, Waiting, Monitoring }
 			private State CurState = State.Stopped;
 			private readonly FileWatcherEx Parent;
-			private FileSystemWatcher FSWatcher;
-			private System.Timers.Timer WaitTimer;
-			private System.Timers.Timer PingTimer;
+			private readonly FileSystemWatcher FSWatcher;
+			private readonly System.Timers.Timer WaitTimer;
+			private readonly System.Timers.Timer PingTimer;
 			private DateTime LastWriteTime = DateTime.MinValue;
 			private long LastLength = 0;
 

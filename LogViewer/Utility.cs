@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Threading.Tasks;
 
 namespace LogViewer {
 	internal class Utility {
@@ -25,10 +26,12 @@ namespace LogViewer {
 			}
 			return false;
 		}
-		public static bool DirectoryExist(string path) {
+		public static bool DirectoryExist(string path, int timeoutMilliseconds = 500) {
 			bool exist = false;
 			try {
-				Directory.GetCreationTime(path);
+				// workaround for slow network path, Directory.GetCreationTime may take a long time to return
+				var task = Task.Run(() => Directory.GetCreationTime(path));
+				task.Wait(timeoutMilliseconds);
 				exist = true;
 			}
 			catch (UnauthorizedAccessException) {
@@ -37,10 +40,12 @@ namespace LogViewer {
 			catch { }
 			return exist;
 		}
-		public static bool DirectoryAuthorized(string path) {
+		public static bool DirectoryAuthorized(string path, int timeoutMilliseconds = 500) {
 			bool auth = false;
 			try {
-				Directory.GetCreationTime(path);
+				// workaround for slow network path, Directory.GetCreationTime may take a long time to return
+				var task = Task.Run(() => Directory.GetCreationTime(path));
+				task.Wait(timeoutMilliseconds);
 				auth = true;
 			}
 			catch (UnauthorizedAccessException) {
